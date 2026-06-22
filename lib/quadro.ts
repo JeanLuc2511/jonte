@@ -15,20 +15,30 @@ export const COLOR_NAME: Record<number, string> = {
 const colorFor = (i: number, j: number, k: number, d: number) =>
   TUBE_COLORS[Math.abs(i * 7 + j * 5 + k * 3 + d * 11) % 4];
 
-/** Höhe der Ebene k in Szenen-Einheiten (langes Rohr = 1, kurzes = 0,5). */
+/** Höhe der Ebene k in Szenen-Einheiten (langes Rohr = 1, kurzes = 0,5). Bruch-k erlaubt (Treppe). */
 export function levelToY(levelHeights: TubeLen[], k: number): number {
+  const full = Math.floor(k);
   let y = 0;
-  for (let e = 0; e < k && e < levelHeights.length; e++) {
+  for (let e = 0; e < full && e < levelHeights.length; e++) {
     y += levelHeights[e] === 'long' ? UNIT_LONG : UNIT_SHORT;
+  }
+  const frac = k - full;
+  if (frac > 0 && full < levelHeights.length) {
+    y += frac * (levelHeights[full] === 'long' ? UNIT_LONG : UNIT_SHORT);
   }
   return y;
 }
 
 /** Höhe der Ebene k in Zentimetern. */
 export function levelToCm(levelHeights: TubeLen[], k: number): number {
+  const full = Math.floor(k);
   let cm = 0;
-  for (let e = 0; e < k && e < levelHeights.length; e++) {
+  for (let e = 0; e < full && e < levelHeights.length; e++) {
     cm += levelHeights[e] === 'long' ? TUBE_LONG_CM : TUBE_SHORT_CM;
+  }
+  const frac = k - full;
+  if (frac > 0 && full < levelHeights.length) {
+    cm += frac * (levelHeights[full] === 'long' ? TUBE_LONG_CM : TUBE_SHORT_CM);
   }
   return cm;
 }
@@ -156,11 +166,25 @@ export function buildModel(m: ModelDef): BuiltModel {
     for (let i = 0; i <= w; i++) for (let j = d; j < jEnd; j++) addRod([i, j, 0], [i, j + 1, 0], 'long', 'horizontal', sBasis);
     for (let j = d + 1; j <= jEnd; j++) for (let i = 0; i < w; i++) addRod([i, j, 0], [i + 1, j, 0], 'long', 'horizontal', sBasis);
 
-    // Zwei Kletter-Etagen (volles Gerüst)
+    // Zwei Kletter-Etagen (volles Gerüst) + Treppe an der rechten hinteren Kante
+    const sT = 'Aufstieg';
+    const isStair = (i: number, j: number) => i === w && (j === 0 || j === 1);
     for (let e = 0; e < 2; e++) {
       const len = m.levelHeights[e];
       const sE = `Etage ${e + 1}`;
-      for (let i = 0; i <= w; i++) for (let j = 0; j <= d; j++) addRod([i, j, e], [i, j, e + 1], len, 'vertical', sE);
+      for (let i = 0; i <= w; i++)
+        for (let j = 0; j <= d; j++) {
+          if (isStair(i, j)) {
+            // zwei kurze Rohre mit Zwischenknoten auf halber Höhe → Stufen-Pfosten
+            addRod([i, j, e], [i, j, e + 0.5], 'short', 'vertical', sT);
+            addRod([i, j, e + 0.5], [i, j, e + 1], 'short', 'vertical', sT);
+          } else {
+            addRod([i, j, e], [i, j, e + 1], len, 'vertical', sE);
+          }
+        }
+      // Trittstufe auf halber Höhe zwischen den beiden Treppen-Pfosten
+      addRod([w, 0, e + 0.5], [w, 1, e + 0.5], 'long', 'horizontal', sT);
+      // waagerechter Rahmen (liefert zugleich die Tritte auf voller Höhe)
       for (let j = 0; j <= d; j++) for (let i = 0; i < w; i++) addRod([i, j, e + 1], [i + 1, j, e + 1], 'long', 'horizontal', sE);
       for (let i = 0; i <= w; i++) for (let j = 0; j < d; j++) addRod([i, j, e + 1], [i, j + 1, e + 1], 'long', 'horizontal', sE);
     }

@@ -335,7 +335,7 @@ function ModelGroup({
                 to={to}
                 current={seg.step === step}
                 reducedMotion={reducedMotion}
-                width={modular ? 1.7 : 0.84}
+                width={modular ? 0.95 : 0.84}
                 bedColor={modular ? 0xe2231a : '#cfd7e2'}
                 railColor={modular ? 0x9a1410 : 0x0061b0}
                 runout={modular && seg.kind === 'chute'}
