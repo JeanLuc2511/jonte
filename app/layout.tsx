@@ -11,7 +11,7 @@ const DESCRIPTION =
   "Dreh dein QUADRO-Klettergerüst in 3D mit dem Finger und bau es Schritt für Schritt auf. 4 Modelle, jedes mit Rutsche.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://jonte.vercel.app"),
+  metadataBase: new URL("https://jonte-black.vercel.app"),
   title: "Jonte – QUADRO Schritt für Schritt aufbauen",
   description: DESCRIPTION,
   applicationName: "Jonte",

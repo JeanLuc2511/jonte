@@ -1,5 +1,7 @@
 # Jonte 🧱
 
+**Live: https://jonte-black.vercel.app**
+
 Eine visuelle, kindgerecht-einfache **Schritt-für-Schritt-Aufbauanleitung für QUADRO-Klettergerüste**.
 Du drehst das Gerüst in 3D mit dem Finger und klickst dich durch den Aufbau – bei jedem Schritt
 **leuchten genau die Teile auf, die neu dazukommen**.
@@ -32,7 +34,7 @@ Oben rechts auf **Teilen** tippen. Auf dem Handy öffnet sich das System-Teilen-
 Jeder Link öffnet direkt das gewählte Modell, z. B.:
 
 ```
-https://jonte.vercel.app/build?modell=turm
+https://jonte-black.vercel.app/build?modell=turm
 ```
 
 Mögliche Modelle: `mini`, `wuerfel`, `turm`, `pool`.
