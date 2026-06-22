@@ -13,7 +13,7 @@ export const COLOR_NAME: Record<number, string> = {
 
 // Deterministische, bunt gemischte Farbverteilung (wie im echten Set).
 const colorFor = (i: number, j: number, k: number, d: number) =>
-  TUBE_COLORS[Math.abs(i * 7 + j * 5 + k * 3 + d * 11) % 4];
+  TUBE_COLORS[Math.abs(Math.round(i * 7 + j * 5 + k * 3 + d * 11)) % 4];
 
 /** Höhe der Ebene k in Szenen-Einheiten (langes Rohr = 1, kurzes = 0,5). Bruch-k erlaubt (Treppe). */
 export function levelToY(levelHeights: TubeLen[], k: number): number {
