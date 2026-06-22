@@ -134,7 +134,7 @@ export default function BuildClient() {
   const totalChips = useMemo(() => totalInventory(built.parts), [built]);
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col overflow-hidden lg:flex-row">
+    <div className="flex h-[100dvh] w-full flex-col overflow-hidden landscape:flex-row">
       <div className="relative min-h-0 flex-1">
         <Scene
           model={model}
@@ -150,13 +150,18 @@ export default function BuildClient() {
           autoRotate={autoRotate}
           onToggleRotate={() => setAutoRotate((v) => !v)}
           onReset={() => setResetKey((k) => k + 1)}
+          reducedMotion={reduced}
         />
+        <p className="sr-only">
+          Interaktive 3D-Ansicht des Modells. Mit den Pfeiltasten links und rechts blätterst du
+          durch die Aufbauschritte.
+        </p>
         <DragHint show={showHint && !showSafety} />
         {showSafety && <SafetyBanner onClose={dismissSafety} />}
       </div>
 
       <aside
-        className="max-h-[50dvh] shrink-0 border-t lg:max-h-none lg:h-full lg:w-[384px] lg:border-l lg:border-t-0"
+        className="max-h-[50dvh] shrink-0 border-t landscape:h-full landscape:max-h-none landscape:w-[384px] landscape:border-l landscape:border-t-0"
         style={{ background: 'var(--panel)', borderColor: 'var(--line)' }}
       >
         <StepBar

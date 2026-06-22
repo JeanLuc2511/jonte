@@ -37,6 +37,19 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Doppeltipp-Zoom & 300ms-Tap-Delay auf Bedienelementen unterbinden (iPad-Gefühl) */
+button,
+a,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+/* Kräftiger, kontrastreicher Tastatur-Fokus für alle Links/Buttons */
+:where(a, button):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .no-select {
   -webkit-user-select: none;
   user-select: none;
@@ -57,6 +70,8 @@ body {
 .scroll-soft {
   scrollbar-width: thin;
   scrollbar-color: var(--line) transparent;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 .scroll-soft::-webkit-scrollbar {
   width: 6px;

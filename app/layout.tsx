@@ -7,10 +7,13 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
+const DESCRIPTION =
+  "Dreh dein QUADRO-Klettergerüst in 3D mit dem Finger und bau es Schritt für Schritt auf. 4 Modelle, jedes mit Rutsche.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://jonte.vercel.app"),
   title: "Jonte – QUADRO Schritt für Schritt aufbauen",
-  description:
-    "Dreh dein QUADRO-Klettergerüst in 3D mit dem Finger und bau es Schritt für Schritt auf. 4 Modelle, jedes mit Rutsche.",
+  description: DESCRIPTION,
   applicationName: "Jonte",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
@@ -21,6 +24,20 @@ export const metadata: Metadata = {
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
     apple: [{ url: "/apple-icon.png" }],
+  },
+  openGraph: {
+    type: "website",
+    locale: "de_DE",
+    siteName: "Jonte",
+    title: "Jonte – QUADRO Schritt für Schritt aufbauen",
+    description: DESCRIPTION,
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "Jonte – QUADRO Aufbau in 3D" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Jonte – QUADRO Schritt für Schritt aufbauen",
+    description: DESCRIPTION,
+    images: ["/og.png"],
   },
   other: { "mobile-web-app-capable": "yes" },
 };

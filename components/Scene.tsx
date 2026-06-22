@@ -250,6 +250,8 @@ function ModelGroup({
   const lh = model.levelHeights;
   const { w, d } = model.base;
   const platformY = levelToY(lh, model.platformAt);
+  // Rutsche hängt an der Ebene, die das Modell vorgibt (i. d. R. die Plattformkante).
+  const slideY = model.slide ? levelToY(lh, model.slide.fromLevel) : platformY;
 
   const renderPart = (
     p: BuiltModel['parts'][number],
@@ -280,13 +282,12 @@ function ModelGroup({
         );
       case 'plate': {
         const [i, j, k] = p.a!;
-        const plateColor = (i + j) % 2 === 0 ? 0x0061b0 : 0xffc60b;
         const pos = new THREE.Vector3(i + 0.5, levelToY(lh, k) + 0.02, j + 0.5);
         return (
           <Plate
             key={key}
             pos={pos}
-            color={plateColor}
+            color={p.color!}
             highlight={highlight}
             reducedMotion={reducedMotion}
           />
@@ -296,7 +297,7 @@ function ModelGroup({
         return (
           <Slide
             key={key}
-            platformY={platformY}
+            platformY={slideY}
             w={w}
             d={d}
             side={p.side ?? 'front'}
@@ -322,14 +323,19 @@ function ModelGroup({
   );
 }
 
-interface OrbitLike {
-  target: THREE.Vector3;
-  update: () => void;
-}
-
-function CameraRig({ model, resetKey }: { model: ModelDef; resetKey: number }) {
+function Controls({
+  model,
+  autoRotate,
+  resetKey,
+  reducedMotion,
+}: {
+  model: ModelDef;
+  autoRotate: boolean;
+  resetKey: number;
+  reducedMotion: boolean;
+}) {
   const camera = useThree((s) => s.camera);
-  const controls = useThree((s) => s.controls) as unknown as OrbitLike | null;
+  const ref = useRef<React.ComponentRef<typeof OrbitControls>>(null);
 
   const home = useMemo(() => {
     const { w, d } = model.base;
@@ -342,15 +348,30 @@ function CameraRig({ model, resetKey }: { model: ModelDef; resetKey: number }) {
 
   useEffect(() => {
     camera.position.copy(home.pos);
-    if (controls) {
-      controls.target.copy(home.target);
-      controls.update();
+    const c = ref.current;
+    if (c) {
+      c.target.copy(home.target);
+      c.update();
     } else {
       camera.lookAt(home.target);
     }
-  }, [home, resetKey, camera, controls]);
+  }, [home, resetKey, camera]);
 
-  return null;
+  return (
+    <OrbitControls
+      ref={ref}
+      makeDefault
+      enablePan={false}
+      autoRotate={autoRotate && !reducedMotion}
+      autoRotateSpeed={0.7}
+      enableDamping
+      dampingFactor={0.08}
+      minDistance={1.6}
+      maxDistance={18}
+      minPolarAngle={0.15}
+      maxPolarAngle={Math.PI / 2 - 0.02}
+    />
+  );
 }
 
 function Lights() {
@@ -405,6 +426,8 @@ export default function Scene({
 }) {
   return (
     <Canvas
+      role="img"
+      aria-label={`3D-Ansicht: ${model.name}, Schritt ${step + 1}`}
       dpr={[1, 2]}
       gl={{ antialias: true, powerPreference: 'high-performance' }}
       camera={{ fov: 42, near: 0.1, far: 100, position: [4, 4, 8] }}
@@ -425,18 +448,11 @@ export default function Scene({
         resolution={1024}
         color="#000000"
       />
-      <CameraRig model={model} resetKey={resetKey} />
-      <OrbitControls
-        makeDefault
-        enablePan={false}
+      <Controls
+        model={model}
         autoRotate={autoRotate}
-        autoRotateSpeed={0.7}
-        enableDamping
-        dampingFactor={0.08}
-        minDistance={1.6}
-        maxDistance={18}
-        minPolarAngle={0.15}
-        maxPolarAngle={Math.PI / 2 - 0.02}
+        resetKey={resetKey}
+        reducedMotion={reducedMotion}
       />
     </Canvas>
   );

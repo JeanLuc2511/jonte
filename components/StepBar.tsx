@@ -11,6 +11,8 @@ const TONE_COLOR: Record<ChipTone, string> = {
   slide: '#ff8a1e',
 };
 
+const hexColor = (n: number) => '#' + n.toString(16).padStart(6, '0');
+
 function ChipPill({ chip }: { chip: Chip }) {
   const c = TONE_COLOR[chip.tone];
   return (
@@ -18,7 +20,15 @@ function ChipPill({ chip }: { chip: Chip }) {
       className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm"
       style={{ borderColor: `${c}55`, background: `${c}14` }}
     >
-      <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: c }} />
+      {chip.colors.length > 0 ? (
+        <span className="flex items-center gap-0.5" aria-hidden>
+          {chip.colors.map((col) => (
+            <span key={col} className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: hexColor(col) }} />
+          ))}
+        </span>
+      ) : (
+        <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: c }} aria-hidden />
+      )}
       <span className="font-medium" style={{ color: 'var(--text)' }}>
         {chip.label}
       </span>
@@ -53,6 +63,9 @@ export default function StepBar({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
+      <p className="sr-only" aria-live="polite" aria-atomic="true">
+        Schritt {index + 1} von {total}: {step.title}
+      </p>
       {/* Fortschritt */}
       <div className="px-5 pt-4">
         <div className="flex items-center justify-between text-xs" style={{ color: 'var(--muted)' }}>
@@ -68,18 +81,23 @@ export default function StepBar({
             Materialliste
           </button>
         </div>
-        <div className="mt-2 flex gap-1" role="progressbar" aria-valuenow={index + 1} aria-valuemin={1} aria-valuemax={total}>
+        <div className="mt-1 flex gap-1" role="group" aria-label="Schritte">
           {steps.map((_, i) => (
             <button
               key={i}
               type="button"
               aria-label={`Zu Schritt ${i + 1}`}
+              aria-current={i === index ? 'step' : undefined}
               onClick={() => setIndex(i)}
-              className="h-1.5 flex-1 rounded-full transition-colors"
-              style={{
-                background: i === index ? 'var(--accent)' : i < index ? '#5a6470' : 'var(--line)',
-              }}
-            />
+              className="flex h-9 flex-1 items-center"
+            >
+              <span
+                className="block h-1.5 w-full rounded-full transition-colors"
+                style={{
+                  background: i === index ? 'var(--accent)' : i < index ? '#5a6470' : 'var(--line)',
+                }}
+              />
+            </button>
           ))}
         </div>
       </div>
@@ -132,16 +150,24 @@ export default function StepBar({
         </button>
         <button
           type="button"
-          onClick={() => setIndex(Math.min(total - 1, index + 1))}
-          disabled={atEnd}
-          className="no-select flex h-12 flex-[1.4] items-center justify-center gap-2 rounded-xl text-base font-bold transition-opacity active:scale-[0.98] disabled:opacity-50"
+          onClick={() => (atEnd ? setIndex(0) : setIndex(Math.min(total - 1, index + 1)))}
+          className="no-select flex h-12 flex-[1.4] items-center justify-center gap-2 rounded-xl text-base font-bold transition-opacity active:scale-[0.98]"
           style={{ background: 'var(--accent)', color: '#1b1205' }}
         >
-          {atEnd ? 'Fertig' : 'Weiter'}
-          {!atEnd && (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+          {atEnd ? (
+            <>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path d="M21 12a9 9 0 1 1-2.64-6.36M21 4v4h-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+              Von vorn
+            </>
+          ) : (
+            <>
+              Weiter
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </>
           )}
         </button>
       </div>

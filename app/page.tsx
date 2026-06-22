@@ -32,7 +32,7 @@ export default function Home() {
             <Link
               key={model.id}
               href={`/build?modell=${model.id}`}
-              className="anim-rise group flex flex-col overflow-hidden rounded-2xl border transition-transform duration-200 hover:-translate-y-0.5 focus-visible:-translate-y-0.5 focus-visible:outline-none"
+              className="anim-rise group flex flex-col overflow-hidden rounded-2xl border transition-transform duration-200 hover:-translate-y-0.5 focus-visible:-translate-y-0.5"
               style={{
                 background: "var(--panel)",
                 borderColor: "var(--line)",
@@ -87,7 +87,7 @@ export default function Home() {
           ⚠︎ Aufbau und Belastungstest durch Erwachsene. In der Nähe von Wasser
           immer Aufsicht.
         </p>
-        <p className="mt-1 opacity-70">
+        <p className="mt-1">
           Maße sind Schätzwerte — bei Bedarf am echten Gerüst nachmessen.
         </p>
       </footer>

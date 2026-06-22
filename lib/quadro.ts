@@ -83,10 +83,16 @@ export function buildModel(m: ModelDef): BuiltModel {
     });
   }
 
-  // Plattform-Platten
+  // Plattform-Platten (blau/gelb im Schachbrett, wie echte Platten gemischt)
   s++;
   for (let i = 0; i < w; i++)
-    for (let j = 0; j < d; j++) parts.push({ type: 'plate', step: s, a: [i, j, m.platformAt], color: 0x0061b0 });
+    for (let j = 0; j < d; j++)
+      parts.push({
+        type: 'plate',
+        step: s,
+        a: [i, j, m.platformAt],
+        color: (i + j) % 2 === 0 ? 0x0061b0 : 0xffc60b,
+      });
   steps.push({
     kicker: 'Plattform',
     title: 'Platten als Plattform einlegen',

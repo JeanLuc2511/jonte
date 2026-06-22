@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import type { Chip, ChipTone } from '@/lib/inventory';
 
@@ -27,13 +27,45 @@ export default function InventorySheet({
   platformHeightCm: number;
   totalHeightCm: number;
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const restoreRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     if (!open) return;
+    restoreRef.current = (document.activeElement as HTMLElement) ?? null;
+    const node = dialogRef.current;
+    const getFocusable = () =>
+      node
+        ? Array.from(
+            node.querySelectorAll<HTMLElement>('button, [href], [tabindex]:not([tabindex="-1"])'),
+          ).filter((el) => !el.hasAttribute('disabled'))
+        : [];
+    getFocusable()[0]?.focus();
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+      if (e.key === 'Tab') {
+        const f = getFocusable();
+        if (f.length === 0) return;
+        const first = f[0];
+        const last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      restoreRef.current?.focus?.();
+    };
   }, [open, onClose]);
 
   if (!open) return null;
@@ -45,9 +77,10 @@ export default function InventorySheet({
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label={`Materialliste ${modelName}`}
+      aria-labelledby="jonte-inv-title"
     >
       <div
+        ref={dialogRef}
         className="anim-rise safe-b w-full max-w-md rounded-t-2xl border p-5 sm:rounded-2xl"
         style={{ background: 'var(--panel)', borderColor: 'var(--line)' }}
         onClick={(e) => e.stopPropagation()}
@@ -57,13 +90,15 @@ export default function InventorySheet({
             <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--accent)' }}>
               Materialliste gesamt
             </p>
-            <h2 className="mt-0.5 text-xl font-bold">{modelName}</h2>
+            <h2 id="jonte-inv-title" className="mt-0.5 text-xl font-bold">
+              {modelName}
+            </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Schließen"
-            className="no-select inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border"
+            className="no-select inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border"
             style={{ borderColor: 'var(--line)', color: 'var(--text)' }}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
