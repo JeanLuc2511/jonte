@@ -1,65 +1,111 @@
-import Image from "next/image";
+import Link from "next/link";
+
+import ModelPreview from "@/components/ModelPreview";
+import { buildModel } from "@/lib/quadro";
+import { MODELS } from "@/lib/models";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <main className="safe-x mx-auto flex min-h-[100dvh] w-full max-w-5xl flex-col px-5 py-8 sm:px-8">
+      <header className="safe-t anim-rise">
+        <span
+          className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-widest"
+          style={{ borderColor: "var(--line)", color: "var(--muted)" }}
+        >
+          <span className="inline-block h-2 w-2 rounded-full" style={{ background: "var(--accent)" }} />
+          QUADRO Aufbau-Assistent
+        </span>
+        <h1 className="mt-4 text-5xl font-black tracking-tight sm:text-6xl">
+          Jonte
+        </h1>
+        <p className="mt-2 max-w-xl text-base leading-relaxed" style={{ color: "var(--muted)" }}>
+          Wähle ein Modell, dreh es mit dem Finger in 3D und bau es Schritt für
+          Schritt auf. Bei jedem Schritt leuchten genau die Teile auf, die neu
+          dazukommen.
+        </p>
+      </header>
+
+      <section className="mt-8 grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
+        {MODELS.map((model, idx) => {
+          const built = buildModel(model);
+          return (
+            <Link
+              key={model.id}
+              href={`/build?modell=${model.id}`}
+              className="anim-rise group flex flex-col overflow-hidden rounded-2xl border transition-transform duration-200 hover:-translate-y-0.5 focus-visible:-translate-y-0.5 focus-visible:outline-none"
+              style={{
+                background: "var(--panel)",
+                borderColor: "var(--line)",
+                animationDelay: `${0.05 + idx * 0.06}s`,
+              }}
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+              <div
+                className="relative flex h-44 items-center justify-center"
+                style={{
+                  background:
+                    "radial-gradient(420px 240px at 50% 18%, rgba(255,138,30,0.10), transparent 70%), #14161b",
+                }}
+              >
+                <ModelPreview model={model} className="h-40 w-full px-6 transition-transform duration-300 group-hover:scale-[1.04]" />
+              </div>
+
+              <div className="flex flex-1 flex-col gap-3 p-5">
+                <div className="flex items-baseline justify-between gap-3">
+                  <h2 className="text-xl font-bold">{model.name}</h2>
+                  <span
+                    className="shrink-0 text-sm font-semibold"
+                    style={{ color: "var(--accent)" }}
+                  >
+                    ~{built.platformHeightCm} cm
+                  </span>
+                </div>
+                <p className="text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
+                  {model.blurb}
+                </p>
+                <div className="mt-auto flex flex-wrap items-center gap-2 pt-1 text-xs">
+                  <Tag>{built.parts.length} Teile</Tag>
+                  <Tag>{built.steps.length} Schritte</Tag>
+                  {model.slide && <Tag accent>mit Rutsche</Tag>}
+                  <span
+                    className="ml-auto inline-flex items-center gap-1 font-semibold transition-transform group-hover:translate-x-0.5"
+                    style={{ color: "var(--text)" }}
+                  >
+                    Aufbauen
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+            </Link>
+          );
+        })}
+      </section>
+
+      <footer className="safe-b mt-8 text-xs leading-relaxed" style={{ color: "var(--muted)" }}>
+        <p>
+          ⚠︎ Aufbau und Belastungstest durch Erwachsene. In der Nähe von Wasser
+          immer Aufsicht.
+        </p>
+        <p className="mt-1 opacity-70">
+          Maße sind Schätzwerte — bei Bedarf am echten Gerüst nachmessen.
+        </p>
+      </footer>
+    </main>
+  );
+}
+
+function Tag({ children, accent }: { children: React.ReactNode; accent?: boolean }) {
+  return (
+    <span
+      className="inline-flex items-center rounded-full border px-2.5 py-1 font-medium"
+      style={{
+        borderColor: accent ? "rgba(255,138,30,0.4)" : "var(--line)",
+        color: accent ? "var(--accent)" : "var(--muted)",
+        background: accent ? "rgba(255,138,30,0.08)" : "transparent",
+      }}
+    >
+      {children}
+    </span>
   );
 }

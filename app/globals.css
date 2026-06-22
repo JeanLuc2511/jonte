@@ -1,26 +1,109 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #15171c;
+  --panel: #1d2027;
+  --panel-2: #22262f;
+  --line: #2a2e37;
+  --accent: #ff8a1e;
+  --accent-press: #ff7a00;
+  --text: #f4f5f7;
+  --muted: #9aa0ad;
+  --q-red: #e2231a;
+  --q-blue: #0061b0;
+  --q-yellow: #ffc60b;
+  --q-green: #00963f;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  height: 100%;
+  background: var(--bg);
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  min-height: 100%;
+  background:
+    radial-gradient(1200px 820px at 72% -12%, rgba(255, 138, 30, 0.07), transparent 60%),
+    radial-gradient(940px 720px at -12% 112%, rgba(0, 97, 176, 0.09), transparent 60%),
+    var(--bg);
+  color: var(--text);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.no-select {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* iPad / Notch Safe-Areas */
+.safe-t {
+  padding-top: max(env(safe-area-inset-top), 0.5rem);
+}
+.safe-b {
+  padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+}
+.safe-x {
+  padding-left: max(env(safe-area-inset-left), 0px);
+  padding-right: max(env(safe-area-inset-right), 0px);
+}
+
+.scroll-soft {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+.scroll-soft::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scroll-soft::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 3px;
+}
+
+@keyframes jonte-rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.anim-rise {
+  animation: jonte-rise 0.34s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes jonte-pop {
+  0% {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.anim-pop {
+  animation: jonte-pop 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
