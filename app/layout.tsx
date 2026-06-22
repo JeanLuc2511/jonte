@@ -1,11 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
 import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
 
 const DESCRIPTION =
   "Dreh dein QUADRO-Klettergerüst in 3D mit dem Finger und bau es Schritt für Schritt auf. 4 Modelle, jedes mit Rutsche.";
@@ -55,7 +49,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="de" className={`${geistSans.variable} h-full antialiased`}>
+    <html lang="de" className="h-full antialiased">
       <body className="min-h-full">{children}</body>
     </html>
   );

@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import InventorySheet from '@/components/InventorySheet';
 import StepBar from '@/components/StepBar';
 import TopBar from '@/components/TopBar';
-import { stepInventory, totalInventory } from '@/lib/inventory';
+import { totalChips } from '@/lib/inventory';
 import { DEFAULT_MODEL_ID, modelById } from '@/lib/models';
 import { buildModel } from '@/lib/quadro';
 
@@ -130,8 +130,7 @@ export default function BuildClient() {
     }
   }, []);
 
-  const chips = useMemo(() => stepInventory(built.parts, index), [built, index]);
-  const totalChips = useMemo(() => totalInventory(built.parts), [built]);
+  const inventory = useMemo(() => totalChips(built), [built]);
 
   return (
     <div className="flex h-[100dvh] w-full flex-col overflow-hidden landscape:flex-row">
@@ -165,10 +164,9 @@ export default function BuildClient() {
         style={{ background: 'var(--panel)', borderColor: 'var(--line)' }}
       >
         <StepBar
-          steps={built.steps}
+          built={built}
           index={index}
           setIndex={setIndex}
-          chips={chips}
           platformHeightCm={built.platformHeightCm}
           totalHeightCm={built.totalHeightCm}
           onShowInventory={() => setShowInv(true)}
@@ -179,7 +177,7 @@ export default function BuildClient() {
         open={showInv}
         onClose={() => setShowInv(false)}
         modelName={model.name}
-        chips={totalChips}
+        chips={inventory}
         platformHeightCm={built.platformHeightCm}
         totalHeightCm={built.totalHeightCm}
       />

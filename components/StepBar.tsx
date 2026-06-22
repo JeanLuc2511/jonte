@@ -1,17 +1,20 @@
 'use client';
 
-import type { Chip, ChipTone } from '@/lib/inventory';
-import type { Step } from '@/lib/types';
+import { useMemo } from 'react';
+
+import { type Chip, type ChipTone, stepChips } from '@/lib/inventory';
+import type { BuiltModel, Connector } from '@/lib/types';
 
 const TONE_COLOR: Record<ChipTone, string> = {
-  node: '#c8cdd6',
   long: '#3a86d6',
   short: '#2bb673',
   plate: '#ffc60b',
   slide: '#ff8a1e',
+  connector: '#b9a0ff',
 };
 
 const hexColor = (n: number) => '#' + n.toString(16).padStart(6, '0');
+const keyOf = (c: readonly number[]) => `${c[0]},${c[1]},${c[2]}`;
 
 function ChipPill({ chip }: { chip: Chip }) {
   const c = TONE_COLOR[chip.tone];
@@ -32,6 +35,11 @@ function ChipPill({ chip }: { chip: Chip }) {
       <span className="font-medium" style={{ color: 'var(--text)' }}>
         {chip.label}
       </span>
+      {chip.sub && (
+        <span className="text-xs" style={{ color: 'var(--muted)' }}>
+          {chip.sub}
+        </span>
+      )}
       <span className="font-bold tabular-nums" style={{ color: c }}>
         ×{chip.count}
       </span>
@@ -40,33 +48,51 @@ function ChipPill({ chip }: { chip: Chip }) {
 }
 
 export default function StepBar({
-  steps,
+  built,
   index,
   setIndex,
-  chips,
   platformHeightCm,
   totalHeightCm,
   onShowInventory,
 }: {
-  steps: Step[];
+  built: BuiltModel;
   index: number;
   setIndex: (i: number) => void;
-  chips: Chip[];
   platformHeightCm: number;
   totalHeightCm: number;
   onShowInventory: () => void;
 }) {
-  const total = steps.length;
-  const step = steps[index];
+  const total = built.steps.length;
+  const step = built.steps[index];
   const atStart = index <= 0;
   const atEnd = index >= total - 1;
+
+  const chips = useMemo(() => stepChips(built, index), [built, index]);
+
+  const sectionStart = useMemo(() => {
+    const map = new Map<string, number>();
+    built.steps.forEach((s) => {
+      if (!map.has(s.section)) map.set(s.section, s.index);
+    });
+    return map;
+  }, [built]);
+
+  const connByKey = useMemo(() => new Map(built.connectors.map((c) => [c.key, c])), [built]);
+
+  // Verbinder an den Enden des aktuellen Stabs
+  const endpoints = useMemo(() => {
+    if (step?.kind !== 'rod') return [] as Connector[];
+    const rod = built.rods[step.ref];
+    return [connByKey.get(keyOf(rod.a)), connByKey.get(keyOf(rod.b))].filter(Boolean) as Connector[];
+  }, [step, built.rods, connByKey]);
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <p className="sr-only" aria-live="polite" aria-atomic="true">
-        Schritt {index + 1} von {total}: {step.title}
+        Schritt {index + 1} von {total}: {step?.title}
       </p>
-      {/* Fortschritt */}
+
+      {/* Kopf: Fortschritt + Scrubber + Abschnitte */}
       <div className="px-5 pt-4">
         <div className="flex items-center justify-between text-xs" style={{ color: 'var(--muted)' }}>
           <span>
@@ -81,33 +107,47 @@ export default function StepBar({
             Materialliste
           </button>
         </div>
-        <div className="mt-1 flex gap-1" role="group" aria-label="Schritte">
-          {steps.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              aria-label={`Zu Schritt ${i + 1}`}
-              aria-current={i === index ? 'step' : undefined}
-              onClick={() => setIndex(i)}
-              className="flex h-9 flex-1 items-center"
-            >
-              <span
-                className="block h-1.5 w-full rounded-full transition-colors"
+
+        <input
+          type="range"
+          min={0}
+          max={Math.max(0, total - 1)}
+          value={index}
+          onChange={(e) => setIndex(Number(e.target.value))}
+          aria-label="Bauschritt wählen"
+          className="mt-2 w-full"
+          style={{ accentColor: 'var(--accent)' }}
+        />
+
+        <div className="scroll-soft -mx-1 mt-1 flex gap-1.5 overflow-x-auto px-1 pb-1">
+          {built.sections.map((s) => {
+            const start = sectionStart.get(s) ?? 0;
+            const active = step?.section === s;
+            return (
+              <button
+                key={s}
+                type="button"
+                onClick={() => setIndex(start)}
+                className="no-select shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
                 style={{
-                  background: i === index ? 'var(--accent)' : i < index ? '#5a6470' : 'var(--line)',
+                  borderColor: active ? 'rgba(255,138,30,0.5)' : 'var(--line)',
+                  background: active ? 'rgba(255,138,30,0.14)' : 'transparent',
+                  color: active ? 'var(--accent)' : 'var(--muted)',
                 }}
-              />
-            </button>
-          ))}
+              >
+                {s}
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Inhalt */}
       <div className="scroll-soft min-h-0 flex-1 overflow-y-auto px-5 py-4">
         <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--accent)' }}>
-          {step.kicker}
+          {step?.section}
         </p>
-        <h2 className="mt-1 text-xl font-bold leading-snug">{step.title}</h2>
+        <h2 className="mt-1 text-xl font-bold leading-snug">{step?.title}</h2>
 
         {chips.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-2">
@@ -117,8 +157,32 @@ export default function StepBar({
           </div>
         )}
 
+        {endpoints.length > 0 && (
+          <div className="mt-3 rounded-xl border px-3 py-2 text-sm" style={{ borderColor: 'var(--line)' }}>
+            <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--muted)' }}>
+              Steckt in diese Verbinder
+            </p>
+            <div className="mt-1.5 flex flex-col gap-1">
+              {endpoints.map((c) => (
+                <div key={c.key} className="flex items-center gap-2">
+                  <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ background: TONE_COLOR.connector }} aria-hidden />
+                  <span className="font-medium">{c.name}</span>
+                  <span className="text-xs" style={{ color: 'var(--muted)' }}>
+                    {c.sockets} Sockel
+                  </span>
+                  {c.step === index && (
+                    <span className="rounded-full px-2 py-0.5 text-xs font-bold" style={{ background: 'rgba(255,138,30,0.16)', color: 'var(--accent)' }}>
+                      neu
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--muted)' }}>
-          {step.hint}
+          {step?.hint}
         </p>
 
         <div

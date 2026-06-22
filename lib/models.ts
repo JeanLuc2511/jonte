@@ -2,6 +2,15 @@ import type { ModelDef } from './types';
 
 export const MODELS: ModelDef[] = [
   {
+    id: 'aussichtsturm',
+    name: 'Aussichtsturm',
+    blurb: 'Turm mit Plattform, Geländer und breiter Modular-Rutsche (QUADRO B0021).',
+    base: { w: 2, d: 2 },
+    levelHeights: ['long', 'long', 'short'], // 2 Kletter-Etagen + Geländer
+    platformAt: 2, // Plattform auf Ebene 2, Geländer auf Ebene 3
+    slide: { side: 'front', fromLevel: 2, segments: 2 }, // Kopfstück + Bahn
+  },
+  {
     id: 'mini',
     name: 'Mini',
     blurb: 'Flacher Würfel, niedrige Plattform – für die Kleinsten.',

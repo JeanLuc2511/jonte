@@ -39,6 +39,9 @@ yarn-error.log*
 # lokale Tooling-/Editor-Konfig
 /.claude/
 
+# Referenz-Fotos der Bauteile (nicht Teil der App)
+/Bauteil Bilder/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -28,6 +28,7 @@ export default function Home() {
       <section className="mt-8 grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
         {MODELS.map((model, idx) => {
           const built = buildModel(model);
+          const teile = built.rods.length + built.connectors.length + built.plates.length + built.slide.length;
           return (
             <Link
               key={model.id}
@@ -63,7 +64,7 @@ export default function Home() {
                   {model.blurb}
                 </p>
                 <div className="mt-auto flex flex-wrap items-center gap-2 pt-1 text-xs">
-                  <Tag>{built.parts.length} Teile</Tag>
+                  <Tag>{teile} Teile</Tag>
                   <Tag>{built.steps.length} Schritte</Tag>
                   {model.slide && <Tag accent>mit Rutsche</Tag>}
                   <span

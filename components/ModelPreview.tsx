@@ -22,25 +22,24 @@ export default function ModelPreview({ model, className }: { model: ModelDef; cl
   const nodes: { x: number; y: number }[] = [];
   const pts: [number, number][] = [];
 
-  for (const p of built.parts) {
-    if (p.type === 'tube' && p.a && p.b) {
-      const [x1, y1] = projCoord(p.a, lh);
-      const [x2, y2] = projCoord(p.b, lh);
-      pts.push([x1, y1], [x2, y2]);
-      lines.push({
-        x1,
-        y1,
-        x2,
-        y2,
-        color: hex(p.color ?? 0x888888),
-        depth: (y1 + y2) / 2,
-        vertical: p.a[0] === p.b[0] && p.a[1] === p.b[1],
-      });
-    } else if (p.type === 'node' && p.a) {
-      const [x, y] = projCoord(p.a, lh);
-      nodes.push({ x, y });
-      pts.push([x, y]);
-    }
+  for (const r of built.rods) {
+    const [x1, y1] = projCoord(r.a, lh);
+    const [x2, y2] = projCoord(r.b, lh);
+    pts.push([x1, y1], [x2, y2]);
+    lines.push({
+      x1,
+      y1,
+      x2,
+      y2,
+      color: hex(r.color),
+      depth: (y1 + y2) / 2,
+      vertical: r.orient === 'vertical',
+    });
+  }
+  for (const c of built.connectors) {
+    const [x, y] = projCoord(c.pos, lh);
+    nodes.push({ x, y });
+    pts.push([x, y]);
   }
 
   // Plattform-Viereck

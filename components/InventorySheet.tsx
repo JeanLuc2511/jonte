@@ -5,12 +5,14 @@ import { useEffect, useRef } from 'react';
 import type { Chip, ChipTone } from '@/lib/inventory';
 
 const TONE_COLOR: Record<ChipTone, string> = {
-  node: '#c8cdd6',
   long: '#3a86d6',
   short: '#2bb673',
   plate: '#ffc60b',
   slide: '#ff8a1e',
+  connector: '#b9a0ff',
 };
+
+const hexColor = (n: number) => '#' + n.toString(16).padStart(6, '0');
 
 export default function InventorySheet({
   open,
@@ -117,8 +119,21 @@ export default function InventorySheet({
                 style={{ borderColor: 'var(--line)', background: 'rgba(255,255,255,0.02)' }}
               >
                 <span className="flex items-center gap-3">
-                  <span className="inline-block h-3 w-3 rounded-full" style={{ background: c }} />
+                  {chip.colors.length > 0 ? (
+                    <span className="flex items-center gap-0.5" aria-hidden>
+                      {chip.colors.map((col) => (
+                        <span key={col} className="inline-block h-3 w-3 rounded-full" style={{ background: hexColor(col) }} />
+                      ))}
+                    </span>
+                  ) : (
+                    <span className="inline-block h-3 w-3 rounded-full" style={{ background: c }} aria-hidden />
+                  )}
                   <span className="font-medium">{chip.label}</span>
+                  {chip.sub && (
+                    <span className="text-xs" style={{ color: 'var(--muted)' }}>
+                      {chip.sub}
+                    </span>
+                  )}
                 </span>
                 <span className="text-lg font-bold tabular-nums" style={{ color: c }}>
                   {chip.count}×
