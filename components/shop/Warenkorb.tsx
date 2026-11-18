@@ -1,8 +1,8 @@
 "use client";
 
+import { usePreise } from "@/lib/camp/store";
 import Link from "next/link";
 import { useState } from "react";
-import { ABO } from "@/lib/daten/abo";
 import { euro, isoHeute } from "@/lib/datum";
 import { getKonto, useRolle } from "@/lib/mein-camp/store";
 import { darf } from "@/lib/rechte";
@@ -15,6 +15,7 @@ import { IconMinus, IconPlus } from "../Icons";
 import { ProduktGrafik } from "./ProduktGrafik";
 
 export function Warenkorb({ produkte }: { produkte: Produkt[] }) {
+  const ABO = usePreise();
   const { zeilen, lieferziel } = useWarenkorb();
   const rolle = useRolle();
   const [hinweis, setHinweis] = useState<null | "demo" | "budget">(null);

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { FAHRZEUGE } from "@/lib/daten/fahrzeuge";
-import { ABO } from "@/lib/daten/abo";
+import { useCamp, usePreise } from "@/lib/camp/store";
+import { buchungEingegangen, workshopReserviert } from "@/lib/services/camp";
 import { KONTO_VORTEILE } from "@/lib/daten/site";
 import { useKonto, useRolle } from "@/lib/mein-camp/store";
 import { darf } from "@/lib/rechte";
@@ -11,7 +12,7 @@ import { buchungMerken } from "@/lib/services/mitglieder";
 import { ZEITFENSTER } from "@/lib/daten/leistungen";
 import { euro, formatLang, formatZeitraum, naechster, plusTage } from "@/lib/datum";
 import {
-  STUNDENPREIS, belegungImZeitraum, buchtPreis, getBelegung, sendeBuchung, workshopStatus, workshopText,
+  belegungAus, belegungImZeitraum, buchtPreis, sendeBuchung, workshopStatus, workshopText,
 } from "@/lib/services/buchung";
 import type { BuchungsBestaetigung, Leistung, LeistungId, Workshop, Zone } from "@/lib/types";
 import { useHeute } from "@/lib/warenkorb";
@@ -27,8 +28,15 @@ interface Props {
 
 const TASTEN = "ABCDEF";
 
-export function Buchung({ leistungen, buchten, workshops, start }: Props) {
+export function Buchung({ start, ...props }: Props) {
   const heute = useHeute();
+  // Halle, Workshops, Leistungen und Preise pflegt Seb im Cockpit – live aus dem Camp-Zustand.
+  const camp = useCamp();
+  const ABO = usePreise();
+  const STUNDENPREIS = ABO.stundenpreis;
+  const leistungen = camp?.leistungen ?? props.leistungen;
+  const buchten = camp ? camp.zonen.filter((z) => z.typ === "bucht") : props.buchten;
+  const workshops = (camp?.workshops ?? props.workshops).filter((w) => !w.abgesagt && (!heute || w.datum >= heute));
   const [leistung, setLeistung] = useState<LeistungId>(start.leistung ?? (start.workshop ? "workshop" : "bucht"));
   const [modus, setModus] = useState<"tage" | "stunden">("tage");
   const [zeit, setZeit] = useState<{ von?: string; bis?: string }>({ von: start.von, bis: start.bis });
@@ -55,7 +63,7 @@ export function Buchung({ leistungen, buchten, workshops, start }: Props) {
   const von = zeit.von ?? (heute ? naechster(heute, 6) : undefined);
   const bis = modus === "stunden" || leistung !== "bucht" ? von : (zeit.bis && von && zeit.bis >= von ? zeit.bis : von ? plusTage(von, 1) : undefined);
 
-  const belegung = useMemo(() => (heute ? getBelegung(heute) : []), [heute]);
+  const belegung = useMemo(() => (camp ? belegungAus(camp) : []), [camp]);
   const belegt = useMemo(
     () => new Set(von && bis ? belegungImZeitraum(belegung, von, bis).map((b) => b.buchtId) : []),
     [belegung, von, bis],
@@ -74,7 +82,7 @@ export function Buchung({ leistungen, buchten, workshops, start }: Props) {
     if (modus === "tage") {
       if (!gewaehlteBucht) fehlt = "Wähl eine freie Werkstattbucht.";
       else if (von && bis) {
-        const p = buchtPreis(gewaehlteBucht.bucht!.preisProTag, von, bis);
+        const p = buchtPreis(gewaehlteBucht.bucht!.preisProTag, von, bis, ABO.wochenrabatt);
         summe = p.summe;
         if (!inklusive) { pauschale = { tage: p.tage, betrag: p.tage * ABO.werkzeugpauschaleProTag }; summe += pauschale.betrag; }
         zeile = `${gewaehlteBucht.name} · ${formatZeitraum(von, bis)} · ${p.tage} ${p.tage === 1 ? "Tag" : "Tage"}${p.rabatt ? " · 15 % Wochenrabatt" : ""}`;
@@ -106,12 +114,25 @@ export function Buchung({ leistungen, buchten, workshops, start }: Props) {
       leistung, objektId: leistung === "bucht" ? gewaehlteBucht?.id : gewaehlterWorkshop?.id,
       von, bis, uhrzeit, kontakt: k, alsGast: !eingeloggt,
     });
+    // Demo: Buchung und Reservierung erscheinen sofort in Sebs Cockpit.
+    let buchungsId: string | undefined;
+    if (leistung === "bucht" && modus === "tage" && gewaehlteBucht && bis && summe !== null) {
+      buchungsId = buchungEingegangen({
+        buchtId: gewaehlteBucht.id, von, bis, quelle: "online", mitgliedId: eingeloggt ? konto.mitglied.id : undefined,
+        kunde: { name: `${k.vorname} ${k.nachname}`.replace(" –", "").trim(), email: k.email, telefon: k.telefon || undefined },
+        fahrzeug: meinFahrzeug
+          ? { spitzname: meinFahrzeug.spitzname, modell: meinFahrzeug.modell, typ: meinFahrzeug.typ, farbe: meinFahrzeug.farbe }
+          : { spitzname: k.vorname, modell: FAHRZEUGE.find((f) => f.id === k.fahrzeug)?.name ?? "Fahrzeug offen", typ: FAHRZEUGE.find((f) => f.id === k.fahrzeug)?.id ?? "anderes", farbe: "#EED5C7" },
+        summe,
+      });
+    }
+    if (leistung === "workshop" && gewaehlterWorkshop) workshopReserviert(gewaehlterWorkshop.id, { name: `${k.vorname} ${k.nachname}`.replace(" –", "").trim(), email: k.email, telefon: k.telefon || undefined });
     if (eingeloggt && summe !== null) {
       buchungMerken({
         leistung, titel: leistung === "bucht" ? (modus === "tage" && gewaehlteBucht ? gewaehlteBucht.name : "Werkstattbucht stundenweise") : leistung === "workshop" ? `Workshop: ${gewaehlterWorkshop?.titel}` : aktuelle.name,
         buchtId: modus === "tage" ? gewaehlteBucht?.id : undefined, von: leistung === "workshop" && gewaehlterWorkshop ? gewaehlterWorkshop.datum : von,
         bis: leistung === "workshop" && gewaehlterWorkshop ? gewaehlterWorkshop.datum : bis ?? von, uhrzeit, fahrzeugId: meinFahrzeug?.id, summe,
-      });
+      }, buchungsId);
     }
     setFertig(b);
     window.scrollTo({ top: 0 });

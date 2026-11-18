@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { RechtsInhalt } from "@/components/live/Inhalte";
 import { RECHTSSEITEN } from "@/lib/daten/rechtliches";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -34,22 +35,7 @@ export default async function RechtsSeite({ params }: Props) {
             ))}
           </ul>
         </nav>
-        <article className="min-w-0 max-w-2xl">
-          <span className="badge">Platzhalter</span>
-          <h1 className="display-xl mt-5">{seite.titel}</h1>
-          <p className="lead mt-5">{seite.intro}</p>
-          <div className="mt-10 space-y-8">
-            {seite.abschnitte.map((a) => (
-              <section key={a.titel} className="border-t border-line pt-5">
-                <h2 className="heading-s">{a.titel}</h2>
-                <p className="mt-2 whitespace-pre-line">{a.text}</p>
-              </section>
-            ))}
-          </div>
-          <p className="mt-12 border border-line p-4 text-[15px] text-muted">
-            Dieser Text ist ein Platzhalter und rechtlich nicht verbindlich. Die endgültige Fassung wird vor dem Start der Seite eingesetzt.
-          </p>
-        </article>
+        <RechtsInhalt slug={slug} />
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Abschnittskopf, Beispiel, Seitenkopf, WartelisteBand } from "@/components/Bausteine";
-import { WorkshopKarte } from "@/components/WorkshopKarte";
+import { WorkshopListe } from "@/components/live/Inhalte";
+import { T } from "@/components/live/T";
 import { getWorkshops } from "@/lib/services/buchung";
 
 export const metadata: Metadata = {
@@ -22,9 +23,9 @@ export default async function WorkshopsSeite() {
 
   return (
     <>
-      <Seitenkopf eyebrow="Workshops im Camp" titel="Einmal zeigen lassen, dann selber machen">
+      <Seitenkopf eyebrow="Workshops im Camp" titel={<T k="workshops.titel" />}>
         <p>
-          Ein Thema, ein Tag, eine kleine Runde am echten Fahrzeug. Jeder Workshop hat eine Mindestteilnehmerzahl – er findet statt, sobald genug Leute dabei sind.
+          <T k="workshops.text" />
         </p>
       </Seitenkopf>
 
@@ -74,9 +75,7 @@ export default async function WorkshopsSeite() {
         <Abschnittskopf eyebrow="Die nächsten Termine" titel="Such dir dein Thema">
           <p>Für Einsteiger und für alle, die schon mittendrin stecken. <Beispiel>Beispieltermine und -preise</Beispiel></p>
         </Abschnittskopf>
-        <div className="mt-10 grid gap-5 lg:grid-cols-2">
-          {workshops.map((w) => <WorkshopKarte key={w.id} w={w} />)}
-        </div>
+        <WorkshopListe workshops={workshops} />
       </section>
 
       <WartelisteBand />

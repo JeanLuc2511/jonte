@@ -15,14 +15,26 @@ export type Recht =
   | "werkzeug.inklusive" | "support" | "buchung.frueher" | "shop.rabatt" | "werkzeug.wuenschen"
   // nur Admin (Cockpit)
   | "events.freigeben" | "support.antworten" | "werkzeug.auswertung" | "werkzeug.kaufen"
-  | "mitglieder.sehen" | "ereignisse.sehen";
+  | "mitglieder.sehen" | "ereignisse.sehen"
+  // Camp-Cockpit
+  | "cockpit" | "buchungen.verwalten" | "halle.pflegen" | "preise.pflegen" | "workshops.verwalten"
+  | "abos.verwalten" | "inhalte.pflegen" | "anfragen.verwalten" | "shop.ueberblick";
 
 const KONTO: Recht[] = ["bucht.buchen", "garage", "projekt", "events.teilnehmen", "events.vorschlagen", "hilfeboerse"];
 const MITGLIED: Recht[] = [...KONTO, "werkzeug.inklusive", "support", "buchung.frueher", "shop.rabatt", "werkzeug.wuenschen"];
 const ADMIN: Recht[] = [
   ...MITGLIED, "events.freigeben", "support.antworten", "werkzeug.auswertung", "werkzeug.kaufen",
   "mitglieder.sehen", "ereignisse.sehen",
+  "cockpit", "buchungen.verwalten", "halle.pflegen", "preise.pflegen", "workshops.verwalten",
+  "abos.verwalten", "inhalte.pflegen", "anfragen.verwalten", "shop.ueberblick",
 ];
+
+/*
+ * Weitere Rollen (z. B. „aushilfe") lassen sich hier ergänzen: Rolle in `lib/types.ts` aufnehmen und
+ * unten eine eigene Rechte-Liste eintragen, etwa
+ *   aushilfe: [...KONTO, "cockpit", "buchungen.verwalten", "support.antworten"]
+ * Das Cockpit blendet Bereiche und Aktionen allein über `darf(rolle, recht)` ein und aus.
+ */
 
 export const RECHTE: Record<Rolle, readonly Recht[]> = {
   gast: ["bucht.buchen"],

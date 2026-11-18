@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { IconPfeil } from "./Icons";
+import { T } from "./live/T";
 
 /** Seitenkopf: Eyebrow, große Headline, Einleitung. */
 export function Seitenkopf({
   eyebrow, titel, children, aktion,
-}: { eyebrow: string; titel: string; children?: React.ReactNode; aktion?: React.ReactNode }) {
+}: { eyebrow: string; titel: React.ReactNode; children?: React.ReactNode; aktion?: React.ReactNode }) {
   return (
     <section className="raster border-b border-line">
       <div className="seite py-14 lg:py-20">
@@ -53,9 +54,9 @@ export function WartelisteBand() {
       <div className="seite flex flex-col gap-8 py-14 lg:flex-row lg:items-center lg:justify-between lg:py-20">
         <div className="max-w-2xl">
           <p className="eyebrow">Wir schrauben noch</p>
-          <h2 className="display-l mt-6">Sei dabei, wenn das Rolltor aufgeht</h2>
+          <h2 className="display-l mt-6"><T k="band.titel" /></h2>
           <p className="mt-5 text-lg text-muted">
-            Trag dich in die Warteliste ein. Du erfährst als Erstes, wann es losgeht, und sicherst dir eine der ersten Werkstattbuchten.
+            <T k="band.text" />
           </p>
         </div>
         <Link href="/warteliste" className="btn btn-primary shrink-0">Zur Warteliste</Link>

@@ -1,9 +1,8 @@
 "use client";
 
+import { useCamp, usePhasen, usePreise } from "@/lib/camp/store";
 import Link from "next/link";
 import { useRef, useState } from "react";
-import { ABO } from "@/lib/daten/abo";
-import { PHASEN } from "@/lib/daten/phasen";
 import { euro, formatLang, isoHeute } from "@/lib/datum";
 import { useKonto, useRolle } from "@/lib/mein-camp/store";
 import { darf } from "@/lib/rechte";
@@ -22,6 +21,8 @@ type Reiter = "plan" | "budget" | "tagebuch";
 const QUELLE: Record<BudgetEintrag["quelle"], string> = { shop: "Fachshop · automatisch", beleg: "Beleg · ausgelesen", manuell: "Von Hand" };
 
 export function Projekt({ produkte }: { produkte: Produkt[] }) {
+  const PHASEN = usePhasen();
+  const camp = useCamp();
   const z = useKonto();
   const [projektId, setProjektId] = useState<string | null>(null);
   const [gezeigt, setGezeigt] = useState<PhasenId | null>(null);
@@ -41,6 +42,7 @@ export function Projekt({ produkte }: { produkte: Produkt[] }) {
     );
   }
   const fahrzeug = z.fahrzeuge.find((f) => f.id === projekt.fahrzeugId);
+  const ausgeblendet = Boolean(camp?.ausgeblendet.includes(projekt.id));
   const phasenId = gezeigt ?? projekt.aktivePhase;
   const vorlage = PHASEN.find((p) => p.id === phasenId)!;
   const aktivIdx = PHASEN.findIndex((p) => p.id === projekt.aktivePhase);
@@ -66,7 +68,7 @@ export function Projekt({ produkte }: { produkte: Produkt[] }) {
         <div className="flex gap-3">
           {projekt.oeffentlich ? <IconAuge className="mt-0.5 shrink-0 text-display" /> : <IconSchloss className="mt-0.5 shrink-0 text-display" />}
           <p>
-            <strong className="font-semibold">{projekt.oeffentlich ? "Öffentlich in der Community-Galerie" : "Privat – nur du siehst dieses Projekt"}</strong>
+            <strong className="font-semibold">{projekt.oeffentlich ? (ausgeblendet ? "Vom Camp-Team vorerst ausgeblendet" : "Öffentlich in der Community-Galerie") : "Privat – nur du siehst dieses Projekt"}</strong>
             <span className="block text-[15px] text-muted">
               {projekt.oeffentlich ? <>Sichtbar sind Titel, Phase, Bautagebuch und dein Instagram-Profil. Budget und Belege bleiben immer privat. <Link href="/community" className="text-accent underline underline-offset-4">Ansehen</Link></> : "Du kannst es jederzeit wieder freigeben."}
             </span>
@@ -121,6 +123,7 @@ export function Projekt({ produkte }: { produkte: Produkt[] }) {
 /* ---------- Checkliste & Stückliste ---------- */
 
 function Plan({ projekt, vorlage, produkte }: { projekt: Ausbauprojekt; vorlage: PhasenVorlage; produkte: Produkt[] }) {
+  const ABO = usePreise();
   const z = useKonto();
   const rolle = useRolle();
   const [anBucht, setAnBucht] = useState(true);
@@ -214,6 +217,7 @@ function Plan({ projekt, vorlage, produkte }: { projekt: Ausbauprojekt; vorlage:
 /* ---------- Budget ---------- */
 
 function Budget({ projekt, phase }: { projekt: Ausbauprojekt; phase: PhasenId }) {
+  const PHASEN = usePhasen();
   const [form, setForm] = useState<null | { haendler: string; datum: string; betrag: string; phase: PhasenId; quelle: "beleg" | "manuell"; positionen?: { name: string; betrag: number }[] }>(null);
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
@@ -343,6 +347,7 @@ function Budget({ projekt, phase }: { projekt: Ausbauprojekt; phase: PhasenId })
 /* ---------- Bautagebuch ---------- */
 
 function Tagebuch({ projekt, phase }: { projekt: Ausbauprojekt; phase: PhasenId }) {
+  const PHASEN = usePhasen();
   const [offen, setOffen] = useState(false);
   const [titel, setTitel] = useState("");
   const [text, setText] = useState("");

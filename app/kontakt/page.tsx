@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Beispiel, Seitenkopf } from "@/components/Bausteine";
 import { IconPin } from "@/components/Icons";
+import { Oeffnungszeiten, Telefon } from "@/components/live/Inhalte";
 import { KontaktFormular } from "@/components/KontaktFormular";
 import { SITE } from "@/lib/daten/site";
 
@@ -53,21 +54,7 @@ export default function KontaktSeite() {
           </address>
           <a href={karte} target="_blank" rel="noopener noreferrer" className="btn btn-outline mt-6">Route in der Karten-App</a>
 
-          <h3 className="label mt-10 text-display">Öffnungszeiten <Beispiel /></h3>
-          <dl className="mt-3 border-t border-line">
-            {SITE.oeffnungszeiten.map((o) => (
-              <div key={o.tage} className="flex justify-between gap-4 border-b border-line py-2.5">
-                <dt>{o.tage}</dt><dd className="text-muted">{o.zeit}</dd>
-              </div>
-            ))}
-          </dl>
-
-          <h3 className="label mt-10 text-display">Gut zu wissen <Beispiel /></h3>
-          <ul className="mt-3 space-y-2 text-muted">
-            <li>Rolltor 3,50 m hoch – auch für Hochdächer mit Dachhaube.</li>
-            <li>Parkplätze für dein Alltagsauto direkt vor der Halle.</li>
-            <li>Noch kein Fahrzeug? Komm trotzdem vorbei und schau dir die Halle an.</li>
-          </ul>
+          <Oeffnungszeiten />
         </div>
       </section>
 
@@ -77,7 +64,7 @@ export default function KontaktSeite() {
             <p className="eyebrow">Schreib uns</p>
             <h2 className="display-l mt-6">Was hast du vor?</h2>
             <p className="mt-5 text-lg text-muted">
-              Erzähl kurz, welches Fahrzeug du hast und wo du stehst. Oder ruf an: <span className="whitespace-nowrap font-semibold text-ink">{SITE.telefon}</span> <Beispiel>Platzhalter</Beispiel>
+              Erzähl kurz, welches Fahrzeug du hast und wo du stehst. Oder ruf an: <span className="whitespace-nowrap font-semibold text-ink"><Telefon /></span> <Beispiel>Platzhalter</Beispiel>
             </p>
           </div>
           <KontaktFormular />

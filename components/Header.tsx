@@ -8,6 +8,7 @@ import { useWarenkorb } from "@/lib/warenkorb";
 import { IconKonto, IconKorb, IconMenue, IconZu } from "./Icons";
 import { DemoSchalter } from "./mein-camp/DemoSchalter";
 import { useKonto, useRolle } from "@/lib/mein-camp/store";
+import { useAdmin } from "@/lib/camp/store";
 import { Logo } from "./Logo";
 
 export function Header() {
@@ -17,6 +18,7 @@ export function Header() {
   const { anzahl } = useWarenkorb();
   const konto = useKonto();
   const rolle = useRolle();
+  const admin = useAdmin();
   // Die Warteliste ist ein ruhiger Vollbild-Dialog ohne Navigation.
   const schlicht = pfad === "/warteliste";
 
@@ -24,7 +26,7 @@ export function Header() {
     <header className="sticky top-0 z-40 border-b border-line bg-dunkel">
       <div className="border-b border-line">
         <div className="seite flex min-h-10 items-center justify-between gap-3 py-1 font-condensed text-[12px] font-semibold uppercase tracking-[0.14em] text-muted">
-          <p>Vision-Demo <span className="max-md:hidden">· Inhalte, Preise und Hallenplan sind Beispiele</span></p>
+          <p className="whitespace-nowrap">Vision-Demo <span className="max-xl:hidden">· Inhalte, Preise und Hallenplan sind Beispiele</span></p>
           <DemoSchalter />
         </div>
       </div>
@@ -61,6 +63,11 @@ export function Header() {
                   </span>
                 )}
               </Link>
+              {admin && (
+                <Link href="/cockpit" className={`flex h-11 items-center px-2 font-condensed text-[15px] font-semibold uppercase tracking-[0.08em] hover:text-display ${pfad.startsWith("/cockpit") ? "text-display" : "text-ink"}`}>
+                  Cockpit
+                </Link>
+              )}
               <Link
                 href="/mein-camp" aria-label="Mein Camp"
                 className={`flex h-11 items-center gap-2 px-2 font-condensed text-[15px] font-semibold uppercase tracking-[0.08em] hover:text-display ${pfad.startsWith("/mein-camp") ? "text-display" : "text-ink"}`}

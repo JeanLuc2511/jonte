@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Seitenkopf, WartelisteBand } from "@/components/Bausteine";
+import { HallenFotos } from "@/components/live/Inhalte";
+import { T } from "@/components/live/T";
 import { WerkstattExplorer } from "@/components/werkstatt/WerkstattExplorer";
-import { HALLE } from "@/lib/daten/halle";
 import { getHalle } from "@/lib/services/buchung";
 
 export const metadata: Metadata = {
@@ -12,18 +13,15 @@ export const metadata: Metadata = {
 
 export default async function WerkstattSeite() {
   const { zonen, werkzeuge } = await getHalle();
-  const buchten = zonen.filter((z) => z.typ === "bucht").length;
 
   return (
     <>
-      <Seitenkopf eyebrow="Die Halle von oben" titel="Schau dich in der Werkstatt um">
-        <p>
-          {buchten} Werkstattbuchten, drei Werkbänke, Holzwerkstatt, Metall-Ecke und eine Wand voller Spezialwerkzeug auf {HALLE.flaeche}.
-          Wähl deinen Zeitraum und sieh, welche Werkstattbucht frei ist und wer neben dir schraubt.
-        </p>
+      <Seitenkopf eyebrow="Die Halle von oben" titel={<T k="werkstatt.titel" />}>
+        <p><T k="werkstatt.text" /></p>
       </Seitenkopf>
 
       <WerkstattExplorer zonen={zonen} werkzeuge={werkzeuge} />
+      <HallenFotos />
 
       <section className="border-t border-line">
         <div className="seite abschnitt !pb-10"><div className="grid gap-px border border-line bg-line md:grid-cols-3">

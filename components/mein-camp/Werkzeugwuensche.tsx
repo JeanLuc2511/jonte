@@ -1,9 +1,10 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { formatLang } from "@/lib/datum";
 import { useKonto } from "@/lib/mein-camp/store";
-import { werkzeugGekauft } from "@/lib/services/cockpit";
+import { setAlsSeb } from "@/lib/camp/store";
 import { werkzeugWuenschen } from "@/lib/services/mitglieder";
 import { BereichKopf, DemoAktion, Feldgruppe, NurMit } from "./Teile";
 
@@ -25,6 +26,7 @@ function Wuensche() {
   const [werkzeug, setWerkzeug] = useState("");
   const [warum, setWarum] = useState("");
   const [danke, setDanke] = useState(false);
+  const router = useRouter();
   if (!z) return null;
   const gueltig = werkzeug.trim().length > 2 && warum.trim().length > 2;
 
@@ -56,7 +58,7 @@ function Wuensche() {
               </div>
               <p className="mt-1 text-muted">{w.begruendung}</p>
               <p className="mt-2 text-[14px] text-muted">Gewünscht am {formatLang(w.datum)}{w.status === "gekauft" ? " · hängt jetzt in der Halle" : ""}</p>
-              {w.status === "offen" && <DemoAktion onClick={() => werkzeugGekauft(w.werkzeug)}>So sieht es aus, wenn Seb es kauft</DemoAktion>}
+              {w.status === "offen" && <DemoAktion onClick={() => { setAlsSeb(true); router.push("/cockpit/werkzeug"); }}>Als Seb im Cockpit entscheiden</DemoAktion>}
             </li>
           ))}
         </ul>

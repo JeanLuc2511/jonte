@@ -9,13 +9,12 @@
  *   sendeBuchung()        → POST /buchungen        (Gast oder Konto)
  * Basis-URL: BUCHUNG_API_URL in `.env.example`.
  */
-import { beispielBelegung } from "@/lib/daten/belegung";
 import { WERKZEUGE, ZONEN } from "@/lib/daten/halle";
 import { LEISTUNGEN } from "@/lib/daten/leistungen";
 import { beispielWorkshops } from "@/lib/daten/workshops";
 import { isoHeute, tageInklusive, ueberschneidet } from "@/lib/datum";
 import type {
-  Belegung, BuchungsAnfrage, BuchungsBestaetigung, Workshop, WorkshopStatus, Zone,
+  Belegung, BuchungsAnfrage, BuchungsBestaetigung, CampZustand, Workshop, WorkshopStatus, Zone,
 } from "@/lib/types";
 
 export async function getHalle() {
@@ -26,9 +25,22 @@ export async function getLeistungen() {
   return LEISTUNGEN;
 }
 
-/** Beispiel-Belegung rund um „heute". Später: Abfrage ans Backend für den Zeitraum. */
-export function getBelegung(heute: string): Belegung[] {
-  return beispielBelegung(heute);
+/**
+ * Belegung der Werkstattbuchten aus Buchungen und Sperrzeiten des Camps.
+ * Später: Abfrage ans Backend für den Zeitraum.
+ */
+export function belegungAus(camp: Pick<CampZustand, "buchungen" | "sperrzeiten">): Belegung[] {
+  const gebucht: Belegung[] = camp.buchungen.filter((b) => b.status === "bestaetigt").map((b) => ({
+    id: b.id, buchtId: b.buchtId, von: b.von, bis: b.bis,
+    fahrzeug: { spitzname: b.fahrzeug.spitzname, modell: b.fahrzeug.modell, typ: b.fahrzeug.typ === "anderes" ? "sprinter" : b.fahrzeug.typ, farbe: b.fahrzeug.farbe },
+    crew: b.kunde.name.split(" ")[0] + (b.kunde.name.includes("&") ? ` & ${b.kunde.name.split("& ")[1].split(" ")[0]}` : ""),
+    phase: b.phase ?? "", instagram: b.instagram,
+  }));
+  const gesperrt: Belegung[] = camp.sperrzeiten.flatMap((s) => s.buchtIds.map((buchtId) => ({
+    id: `${s.id}-${buchtId}`, buchtId, von: s.von, bis: s.bis, gesperrt: s.grund,
+    fahrzeug: { spitzname: "gesperrt", modell: "", typ: "sprinter" as const, farbe: "#A38879" }, crew: "", phase: s.grund,
+  })));
+  return [...gebucht, ...gesperrt];
 }
 
 export async function getWorkshops(heute: string = isoHeute()): Promise<Workshop[]> {
@@ -49,15 +61,16 @@ export function freieBuchten(zonen: Zone[], belegung: Belegung[], von: string, b
 export const STUNDENPREIS = 14;
 export const WOCHENRABATT = 0.15;
 
-/** Preis einer Werkstattbucht: ab 7 Tagen 15 % günstiger (Beispiel-Regel). */
-export function buchtPreis(preisProTag: number, von: string, bis: string) {
+/** Preis einer Werkstattbucht: ab 7 Tagen günstiger (Beispiel-Regel, Rabatt pflegbar im Cockpit). */
+export function buchtPreis(preisProTag: number, von: string, bis: string, wochenrabatt: number = WOCHENRABATT) {
   const tage = tageInklusive(von, bis);
-  const rabatt = tage >= 7;
-  const summe = Math.round(preisProTag * tage * (rabatt ? 1 - WOCHENRABATT : 1));
+  const rabatt = tage >= 7 && wochenrabatt > 0;
+  const summe = Math.round(preisProTag * tage * (rabatt ? 1 - wochenrabatt : 1));
   return { tage, summe, rabatt };
 }
 
 export function workshopStatus(w: Workshop): WorkshopStatus {
+  if (w.abgesagt) return "ausgebucht";
   if (w.angemeldet >= w.maxTeilnehmer) return "ausgebucht";
   if (w.angemeldet >= w.minTeilnehmer) return "findet-statt";
   return "offen";
@@ -65,6 +78,7 @@ export function workshopStatus(w: Workshop): WorkshopStatus {
 
 export function workshopText(w: Workshop): string {
   const status = workshopStatus(w);
+  if (w.abgesagt) return "Abgesagt";
   if (status === "ausgebucht") return "Ausgebucht";
   if (status === "findet-statt") {
     const frei = w.maxTeilnehmer - w.angemeldet;

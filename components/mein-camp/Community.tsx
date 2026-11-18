@@ -1,10 +1,11 @@
 "use client";
 
+import { useCamp, setAlsSeb } from "@/lib/camp/store";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { EVENT_ORDNUNG, EVENT_ORTE } from "@/lib/daten/abo";
+import { EVENT_ORTE } from "@/lib/daten/abo";
 import { formatMonat, formatWochentag, isoHeute, plusTage, tagDesMonats } from "@/lib/datum";
 import { useKonto } from "@/lib/mein-camp/store";
-import { eventEntscheiden } from "@/lib/services/cockpit";
 import { eventTeilnahme, eventVorschlagen, hilfeAntworten, hilfeEintragen, hilfeLoeschen } from "@/lib/services/mitglieder";
 import type { CampEvent } from "@/lib/types";
 import { BereichKopf, DemoAktion, Feldgruppe } from "./Teile";
@@ -28,6 +29,7 @@ export function Community() {
 /* ---------- Events ---------- */
 
 function Events() {
+  const EVENT_ORDNUNG = useCamp()?.eventOrdnung ?? [];
   const z = useKonto();
   const [offen, setOffen] = useState(false);
   const [gesendet, setGesendet] = useState(false);
@@ -99,6 +101,7 @@ function Events() {
 }
 
 function EventKarte({ e }: { e: CampEvent }) {
+  const router = useRouter();
   const wartet = e.status === "vorgeschlagen";
   const voll = e.angemeldet >= e.maxPersonen;
   return (
@@ -114,10 +117,11 @@ function EventKarte({ e }: { e: CampEvent }) {
         <p className="mt-1 text-muted">{e.beschreibung}</p>
         <p className="mt-2 text-[15px]">{e.von} – {e.bis} Uhr · {e.ort}</p>
         <p className="text-[15px] text-muted">Verantwortlich: {e.verantwortlich}{e.vomCamp ? " · Event vom Camp" : " · von Mitgliedern"}</p>
+        {e.begruendung && <p className="mt-1 text-[15px]">Seb: {e.begruendung}</p>}
         {wartet ? (
           <>
             <p className="mt-3 text-[15px] text-accent">Seb prüft, ob der Termin in den Hallenbetrieb passt.</p>
-            <DemoAktion onClick={() => eventEntscheiden(e.id, true)}>So sieht es aus, wenn Seb freigibt</DemoAktion>
+            <DemoAktion onClick={() => { setAlsSeb(true); router.push("/cockpit/workshops"); }}>Als Seb im Cockpit freigeben</DemoAktion>
           </>
         ) : (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3">

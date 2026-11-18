@@ -1,7 +1,7 @@
 "use client";
 
+import { usePreise } from "@/lib/camp/store";
 import { useState } from "react";
-import { ABO } from "@/lib/daten/abo";
 import { euro, formatLang } from "@/lib/datum";
 import { useKonto, useRolle } from "@/lib/mein-camp/store";
 import { aboAbschliessen, aboFortsetzen, aboKuendigen, aboPausieren, demoZuruecksetzen } from "@/lib/services/mitglieder";
@@ -9,6 +9,7 @@ import { Beispiel } from "../Bausteine";
 import { BereichKopf, StufenVergleich } from "./Teile";
 
 export function Mitgliedschaft() {
+  const ABO = usePreise();
   const z = useKonto();
   const rolle = useRolle();
   const [dialog, setDialog] = useState<null | "pause" | "kuendigen">(null);

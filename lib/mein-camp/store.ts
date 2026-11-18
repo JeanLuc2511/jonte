@@ -55,8 +55,16 @@ export function resetKonto() {
   hoerer.forEach((h) => h());
 }
 
+let verbunden = false;
 const subscribe = (h: () => void) => {
   hoerer.add(h);
+  // Zweites Fenster im selben Browser (z. B. Cockpit neben Mitgliederbereich) bleibt synchron.
+  if (!verbunden && typeof window !== "undefined") {
+    verbunden = true;
+    window.addEventListener("storage", (e) => {
+      if (e.key === KEY) { zustand = null; hoerer.forEach((x) => x()); }
+    });
+  }
   return () => {
     hoerer.delete(h);
   };

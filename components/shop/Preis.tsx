@@ -1,12 +1,13 @@
 "use client";
 
-import { ABO } from "@/lib/daten/abo";
+import { usePreise } from "@/lib/camp/store";
 import { euro } from "@/lib/datum";
 import { useRolle } from "@/lib/mein-camp/store";
 import { darf } from "@/lib/rechte";
 
 /** Preis mit Mitgliederrabatt. Später liefert Shopify den Rabatt über Kundengruppen. */
 export function Preis({ betrag, gross = false }: { betrag: number; gross?: boolean }) {
+  const ABO = usePreise();
   const rolle = useRolle();
   const rabatt = rolle && darf(rolle, "shop.rabatt");
   const klasse = gross ? "font-display text-5xl text-display" : "text-lg font-semibold";

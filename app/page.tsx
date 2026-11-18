@@ -4,7 +4,8 @@ import { HeroGrafik } from "@/components/HeroGrafik";
 import { IconHalle, IconLeute, IconPin, IconWerkzeug } from "@/components/Icons";
 import { Galerie } from "@/components/Galerie";
 import { VanSeite } from "@/components/Van";
-import { WorkshopKarte } from "@/components/WorkshopKarte";
+import { LeistungsKarten, WorkshopListe } from "@/components/live/Inhalte";
+import { T } from "@/components/live/T";
 import { Hallenplan } from "@/components/werkstatt/Hallenplan";
 import { FAHRZEUGE } from "@/lib/daten/fahrzeuge";
 import { SITE } from "@/lib/daten/site";
@@ -31,10 +32,10 @@ export default async function Startseite() {
       <section className="raster overflow-hidden border-b border-line">
         <div className="seite grid items-center gap-8 py-12 lg:grid-cols-[1.15fr_1fr] lg:gap-6 lg:py-20">
           <div>
-            <p className="eyebrow">Mietwerkstatt Münster</p>
-            <h1 className="display-hero mt-6 lg:text-[clamp(4.5rem,7.6vw,8rem)]">Bau deinen Camper selbst.</h1>
+            <p className="eyebrow"><T k="start.eyebrow" /></p>
+            <h1 className="display-hero mt-6 lg:text-[clamp(4.5rem,7.6vw,8rem)]"><T k="start.titel" /></h1>
             <p className="mt-7 max-w-xl text-lg leading-[1.82]">
-              Bei uns bekommst du deine eigene Werkstattbucht – voll ausgestattet mit Profi-Werkzeug, Maschinen und Material direkt vor Ort. Du schraubst. Wir sind da, wenn du nicht weiterweißt.
+              <T k="start.text" />
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Link href="/werkstatt" className="btn btn-primary">Werkstattbucht ansehen</Link>
@@ -106,21 +107,7 @@ export default async function Startseite() {
           <Abschnittskopf eyebrow="Was du buchen kannst" titel="Platz, Wissen, Prüfung" />
           <Beispiel>Beispielpreise</Beispiel>
         </div>
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          {leistungen.map((l) => (
-            <article key={l.id} className="karte flex flex-col p-6">
-              <h3 className="heading-m">{l.name}</h3>
-              <p className="mt-3 text-muted">{l.kurz}</p>
-              <ul className="mt-4 space-y-1 text-[15px]">
-                {l.punkte.map((p) => <li key={p} className="flex gap-2"><span className="text-display" aria-hidden="true">–</span>{p}</li>)}
-              </ul>
-              <p className="mt-auto pt-6 text-lg font-semibold">{l.preisText}</p>
-              <Link href={`/buchen?leistung=${l.id}`} className="btn btn-outline btn-klein mt-4">
-                {l.id === "workshop" ? "Platz reservieren" : l.id === "bucht" ? "Bucht buchen" : "Termin wählen"}
-              </Link>
-            </article>
-          ))}
-        </div>
+        <LeistungsKarten leistungen={leistungen} />
         <p className="mt-6 max-w-2xl text-muted">
           Buchen geht ohne Konto – auch nur für eine Stunde, wenn du schnell etwas reparieren willst. Für Mitglieder ist das Werkzeug inklusive, sonst kommt eine Werkzeugpauschale pro Tag dazu.
         </p>
@@ -202,9 +189,7 @@ export default async function Startseite() {
             </Abschnittskopf>
             <PfeilLink href="/workshops">Alle Workshops</PfeilLink>
           </div>
-          <div className="mt-10 grid gap-5 lg:grid-cols-3">
-            {workshops.slice(0, 3).map((w) => <WorkshopKarte key={w.id} w={w} kompakt />)}
-          </div>
+          <WorkshopListe workshops={workshops} anzahl={3} kompakt />
         </div>
       </section>
 

@@ -7,8 +7,7 @@
  * im Browser und meldet ein Ereignis (→ n8n, Cockpit). Zum Andocken werden die Funktionskörper
  * durch `fetch` gegen das Backend ersetzt; Signaturen und Ereignisse bleiben.
  */
-import { ABO } from "@/lib/daten/abo";
-import { PHASEN } from "@/lib/daten/phasen";
+import { getCamp, setCamp } from "@/lib/camp/store";
 import { beispielKonto } from "@/lib/daten/mitglied";
 import { isoHeute, plusTage, vonIso, toIso } from "@/lib/datum";
 import { getKonto, neueId, resetKonto, setKonto } from "@/lib/mein-camp/store";
@@ -20,6 +19,9 @@ import type {
 import { melde } from "./ereignisse";
 
 const jetzt = () => new Date().toISOString();
+/** Preise und Phasen-Vorlagen pflegt Seb im Cockpit – deshalb immer aus dem Camp-Zustand lesen. */
+const ABO = { get preisProMonat() { return getCamp().preise.preisProMonat; } };
+const phasen = () => getCamp().phasen;
 
 function pruefe(recht: Recht) {
   const z = getKonto();
@@ -100,7 +102,7 @@ export function aboKuendigen(grund?: string) {
 export function fahrzeugAnlegen(f: Omit<GaragenFahrzeug, "id">): string {
   pruefe("garage");
   const id = neueId("f");
-  const geplant = Object.fromEntries(PHASEN.map((p) => [p.id, p.budgetRichtwert])) as Record<PhasenId, number>;
+  const geplant = Object.fromEntries(phasen().map((p) => [p.id, p.budgetRichtwert])) as Record<PhasenId, number>;
   const start: PhasenId = f.ausbaustand === "leer" || f.ausbaustand === "fertig" ? "planung" : f.ausbaustand;
   const projekt: Ausbauprojekt = {
     id: neueId("pr"), fahrzeugId: id, titel: `${f.spitzname} wird ausgebaut`, aktivePhase: start,
@@ -183,8 +185,8 @@ export function stuecklisteBestellt(projektId: string, phase: PhasenId, anBucht:
 
 /* ---------- Buchungen ---------- */
 
-export function buchungMerken(b: Omit<MeineBuchung, "id">) {
-  setKonto((z) => ({ ...z, buchungen: [...z.buchungen, { ...b, id: neueId("bu") }] }));
+export function buchungMerken(b: Omit<MeineBuchung, "id">, id: string = neueId("bu")) {
+  setKonto((z) => ({ ...z, buchungen: [...z.buchungen, { ...b, id }] }));
   melde("buchung.angefragt", { leistung: b.leistung, von: b.von, bis: b.bis, buchtId: b.buchtId });
 }
 
@@ -205,6 +207,8 @@ const ANTWORTEN = [
 ];
 
 function sebAntwortet(text: string, art: SupportNachricht["art"] = "nachricht") {
+  // Im Cockpit abschaltbar: Dann antwortet nur noch Seb selbst aus dem Support-Postfach.
+  if (!getCamp().autoAntwort) return;
   const gesendet = Date.now();
   window.setTimeout(() => {
     const n: SupportNachricht = { id: neueId("s"), von: "seb", zeit: jetzt(), text, art };
@@ -237,10 +241,10 @@ export function hilferuf() {
   const z = getKonto();
   const b = laufendeBuchung(z, isoHeute());
   if (!b) return;
-  const n: SupportNachricht = { id: neueId("s"), von: "system", zeit: jetzt(), art: "hilferuf", text: `Hilferuf aus ${b.titel} ist bei Seb angekommen.` };
+  // Der Hilferuf steht sofort ganz oben in Sebs Cockpit, mit Buchtnummer.
+  const n: SupportNachricht = { id: neueId("s"), von: "system", zeit: jetzt(), art: "hilferuf", buchtId: b.buchtId, erledigt: false, text: `Hilferuf aus ${b.titel} ist bei Seb angekommen.` };
   setKonto((alt) => ({ ...alt, support: [...alt.support, n] }));
   melde("support.hilferuf", { buchtId: b.buchtId, fahrzeugId: b.fahrzeugId });
-  sebAntwortet("Hab’s gesehen. Ich bin in fünf Minuten bei dir in der Bucht.");
 }
 
 export function videoterminBuchen(datum: string, uhrzeit: string) {
@@ -300,6 +304,8 @@ export function hilfeLoeschen(id: string) {
 /** Wünsche sind nicht öffentlich: Sie gehen nur an Seb, es gibt kein Voting. */
 export function werkzeugWuenschen(werkzeug: string, begruendung: string) {
   pruefe("werkzeug.wuenschen");
+  // Ein neuer Wunsch macht das Werkzeug in Sebs Auswertung wieder „neu", außer es ist schon entschieden.
+  setCamp((c) => (c.wunschStatus[werkzeug] ? c : { ...c, wunschStatus: { ...c.wunschStatus, [werkzeug]: "neu" } }));
   const z = getKonto();
   setKonto((alt) => ({
     ...alt,

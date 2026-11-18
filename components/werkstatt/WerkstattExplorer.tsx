@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { euro, formatKurz, formatZeitraum, naechster, plusTage } from "@/lib/datum";
-import { belegungImZeitraum, buchtPreis, getBelegung } from "@/lib/services/buchung";
+import { useCamp, usePreise } from "@/lib/camp/store";
+import { belegungAus, belegungImZeitraum, buchtPreis } from "@/lib/services/buchung";
 import type { Belegung, Werkzeug, Zone } from "@/lib/types";
 import { useHeute } from "@/lib/warenkorb";
 import { Beispiel } from "../Bausteine";
@@ -15,8 +16,13 @@ const TYP_NAME: Record<Zone["typ"], string> = {
   bucht: "Werkstattbucht", werkbank: "Werkbank", station: "Station", bereich: "Bereich",
 };
 
-export function WerkstattExplorer({ zonen, werkzeuge }: { zonen: Zone[]; werkzeuge: Werkzeug[] }) {
+export function WerkstattExplorer(props: { zonen: Zone[]; werkzeuge: Werkzeug[] }) {
   const heute = useHeute();
+  // Halle, Werkzeug und Belegung pflegt Seb im Cockpit – live aus dem Camp-Zustand.
+  const camp = useCamp();
+  const preise = usePreise();
+  const zonen = camp?.zonen ?? props.zonen;
+  const werkzeuge = camp?.werkzeuge ?? props.werkzeuge;
   const [zeitraum, setZeitraum] = useState<{ von: string; bis: string } | null>(null);
   const [auswahl, setAuswahl] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
@@ -25,7 +31,7 @@ export function WerkstattExplorer({ zonen, werkzeuge }: { zonen: Zone[]; werkzeu
   const von = zeitraum?.von ?? (heute ? naechster(heute, 6) : null);
   const bis = zeitraum?.bis ?? (von ? plusTage(von, 1) : null);
 
-  const belegung = useMemo(() => (heute ? getBelegung(heute) : []), [heute]);
+  const belegung = useMemo(() => (camp ? belegungAus(camp) : []), [camp]);
   const belegt = useMemo(
     () => (von && bis ? belegungImZeitraum(belegung, von, bis) : []),
     [belegung, von, bis],
@@ -33,6 +39,7 @@ export function WerkstattExplorer({ zonen, werkzeuge }: { zonen: Zone[]; werkzeu
   const buchten = zonen.filter((z) => z.typ === "bucht");
   const belegteIds = new Set(belegt.map((b) => b.buchtId));
   const frei = buchten.filter((z) => !belegteIds.has(z.id));
+  const fahrzeuge = belegt.filter((b) => !b.gesperrt);
 
   const gezeigt = zonen.find((z) => z.id === (hover ?? auswahl)) ?? null;
 
@@ -98,7 +105,7 @@ export function WerkstattExplorer({ zonen, werkzeuge }: { zonen: Zone[]; werkzeu
             <>
               <strong className="font-semibold text-ink">{formatZeitraum(von, bis)}:</strong>
               <span><strong className="text-display">{frei.length} von {buchten.length}</strong> Werkstattbuchten frei</span>
-              <span>· {belegt.length} {belegt.length === 1 ? "Fahrzeug ist" : "Fahrzeuge sind"} gleichzeitig da</span>
+              <span>· {fahrzeuge.length} {fahrzeuge.length === 1 ? "Fahrzeug ist" : "Fahrzeuge sind"} gleichzeitig da</span>
               <Beispiel>Beispiel-Belegung</Beispiel>
             </>
           ) : (
@@ -130,10 +137,10 @@ export function WerkstattExplorer({ zonen, werkzeuge }: { zonen: Zone[]; werkzeu
             {gezeigt ? (
               <ZonenDetail
                 key={gezeigt.id} zone={gezeigt} werkzeuge={werkzeuge} belegt={belegt} belegung={belegung}
-                von={von} bis={bis} angeheftet={auswahl === gezeigt.id} onZu={() => setAuswahl(null)}
+                von={von} bis={bis} angeheftet={auswahl === gezeigt.id} onZu={() => setAuswahl(null)} rabatt={preise.wochenrabatt}
               />
             ) : (
-              <Uebersicht frei={frei} von={von} bis={bis} onZone={setAuswahl} />
+              <Uebersicht frei={frei} von={von} bis={bis} onZone={setAuswahl} rabatt={preise.wochenrabatt} pauschale={preise.werkzeugpauschaleProTag} />
             )}
           </aside>
         </div>
@@ -144,14 +151,14 @@ export function WerkstattExplorer({ zonen, werkzeuge }: { zonen: Zone[]; werkzeu
         <div className="seite py-14">
           <p className="eyebrow">Nachbarn in der Halle</p>
           <h2 className="heading-l mt-5">
-            {belegt.length > 0 ? "Diese Fahrzeuge sind gleichzeitig da" : "In dem Zeitraum hast du die Halle fast für dich"}
+            {fahrzeuge.length > 0 ? "Diese Fahrzeuge sind gleichzeitig da" : "In dem Zeitraum hast du die Halle fast für dich"}
           </h2>
           <p className="lead mt-3 max-w-2xl">
             Wer neben dir schraubt, hat oft genau das Problem schon gelöst, an dem du gerade hängst.
           </p>
-          {belegt.length > 0 && (
+          {fahrzeuge.length > 0 && (
             <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {belegt.map((b) => {
+              {fahrzeuge.map((b) => {
                 const zone = zonen.find((z) => z.id === b.buchtId);
                 return (
                   <li key={b.id} className="karte flex gap-4 p-4">
@@ -189,8 +196,8 @@ export function WerkstattExplorer({ zonen, werkzeuge }: { zonen: Zone[]; werkzeu
 /* ------------------------------------------------------------------ */
 
 function Uebersicht({
-  frei, von, bis, onZone,
-}: { frei: Zone[]; von: string | null; bis: string | null; onZone: (id: string) => void }) {
+  frei, von, bis, onZone, rabatt, pauschale,
+}: { frei: Zone[]; von: string | null; bis: string | null; onZone: (id: string) => void; rabatt: number; pauschale: number }) {
   return (
     <div className="p-5 lg:p-6">
       <p className="label text-muted">Freie Werkstattbuchten</p>
@@ -202,7 +209,7 @@ function Uebersicht({
       )}
       <ul className="mt-4 divide-y divide-line border-y border-line">
         {frei.map((z) => {
-          const preis = von && bis ? buchtPreis(z.bucht!.preisProTag, von, bis) : null;
+          const preis = von && bis ? buchtPreis(z.bucht!.preisProTag, von, bis, rabatt) : null;
           return (
             <li key={z.id} className="flex items-center gap-3 py-3">
               <button type="button" onClick={() => onZone(z.id)} className="min-w-0 flex-1 text-left hover:text-display">
@@ -224,22 +231,23 @@ function Uebersicht({
         })}
       </ul>
       <p className="mt-4 text-[14px] text-muted">
-        Für Mitglieder ist das Werkzeug inklusive, sonst kommen 10 € Werkzeugpauschale pro Tag dazu. <Beispiel>Beispielpreise</Beispiel>
+        Für Mitglieder ist das Werkzeug inklusive, sonst kommen {euro(pauschale)} Werkzeugpauschale pro Tag dazu. <Beispiel>Beispielpreise</Beispiel>
       </p>
     </div>
   );
 }
 
 function ZonenDetail({
-  zone, werkzeuge, belegt, belegung, von, bis, angeheftet, onZu,
+  zone, werkzeuge, belegt, belegung, von, bis, angeheftet, onZu, rabatt,
 }: {
+  rabatt: number;
   zone: Zone; werkzeuge: Werkzeug[]; belegt: Belegung[]; belegung: Belegung[];
   von: string | null; bis: string | null; angeheftet: boolean; onZu: () => void;
 }) {
   const istBucht = zone.typ === "bucht";
   const liste = werkzeuge.filter((w) => w.zoneId === zone.id || (istBucht && w.zoneId === "buchten"));
   const drin = belegt.find((b) => b.buchtId === zone.id);
-  const preis = istBucht && von && bis ? buchtPreis(zone.bucht!.preisProTag, von, bis) : null;
+  const preis = istBucht && von && bis ? buchtPreis(zone.bucht!.preisProTag, von, bis, rabatt) : null;
   const wiederFrei = drin
     ? belegung.filter((b) => b.buchtId === zone.id).reduce((spaet, b) => (b.von <= plusTage(spaet, 1) && b.bis > spaet ? b.bis : spaet), drin.bis)
     : null;
@@ -256,15 +264,15 @@ function ZonenDetail({
       </div>
       <h2 className="heading-m mt-1">{zone.name}</h2>
       {istBucht && von && (
-        <span className={`badge mt-3 ${drin ? "" : "badge-live"}`}>{drin ? "Belegt" : "Frei im Zeitraum"}</span>
+        <span className={`badge mt-3 ${drin ? "" : "badge-live"}`}>{drin ? (drin.gesperrt ? "Gesperrt" : "Belegt") : "Frei im Zeitraum"}</span>
       )}
       <p className="mt-4 text-muted">{zone.beschreibung}</p>
 
       {drin && (
         <div className="mt-4 border border-line p-3">
-          <p className="label text-muted">Steht hier</p>
-          <p className="mt-1 font-semibold">{drin.fahrzeug.spitzname} · {drin.fahrzeug.modell}</p>
-          <p className="text-[15px] text-muted">{drin.crew} · {drin.phase}</p>
+          <p className="label text-muted">{drin.gesperrt ? "Nicht buchbar" : "Steht hier"}</p>
+          <p className="mt-1 font-semibold">{drin.gesperrt ? drin.gesperrt : `${drin.fahrzeug.spitzname} · ${drin.fahrzeug.modell}`}</p>
+          {!drin.gesperrt && <p className="text-[15px] text-muted">{drin.crew} · {drin.phase}</p>}
           {wiederFrei && <p className="mt-1 text-[15px] text-accent">Wieder frei ab {formatKurz(plusTage(wiederFrei, 1))}</p>}
         </div>
       )}
@@ -282,8 +290,10 @@ function ZonenDetail({
           <p className="label mt-6 text-display">{istBucht ? "Im Werkzeugwagen & an der Bucht" : "Das liegt hier"}</p>
           <ul className="mt-2 divide-y divide-line border-y border-line text-[15px]">
             {liste.map((w) => (
-              <li key={w.id} className="flex items-baseline justify-between gap-3 py-2">
-                <span>
+              <li key={w.id} className="flex items-center justify-between gap-3 py-2">
+                <span className="flex items-center gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {w.foto && <img src={w.foto} alt="" className="h-10 w-12 shrink-0 object-cover" />}
                   {w.name}
                   {w.einweisung && <span className="ml-2 font-condensed text-[12px] font-bold uppercase tracking-wider text-accent">Einweisung</span>}
                 </span>
@@ -368,7 +378,9 @@ function Werkzeugliste({
           const o = ort(w);
           return (
             <li key={w.id} className="flex items-center justify-between gap-4 border-b border-line py-3">
-              <div className="min-w-0">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              {w.foto && <img src={w.foto} alt="" className="h-12 w-14 shrink-0 object-cover" />}
+              <div className="min-w-0 flex-1">
                 <p className="font-semibold">
                   {w.name}
                   {w.einweisung && <span className="ml-2 font-condensed text-[12px] font-bold uppercase tracking-wider text-accent">Einweisung</span>}

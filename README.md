@@ -44,6 +44,15 @@ Technik: Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4. Keine Da
 | `/mein-camp/community` | Events vorschlagen und teilnehmen, Hilfe-Börse |
 | `/mein-camp/werkzeugwuensche` | Werkzeug wünschen (nur Mitglieder, nicht öffentlich) |
 | `/mein-camp/mitgliedschaft` | Abo abschließen, pausieren, kündigen; Stufenvergleich und Rechner |
+| `/cockpit` | Sebs Verwaltungsbereich, Start: Heute in der Halle, Zu erledigen, Kennzahlen |
+| `/cockpit/support` | Support-Postfach: alle Projekt-Chats, Hilferufe oben, Video-Termine, Antwortzeit |
+| `/cockpit/buchungen` | Belegungskalender; Buchungen anlegen, verschieben, stornieren; Sperrzeiten |
+| `/cockpit/halle` | Buchten und Stationen im Hallenplan, Werkzeug mit Foto, Preise und Werkzeugpauschale |
+| `/cockpit/workshops` | Workshops mit Teilnehmerliste und Absage; Events freigeben, anlegen; Event-Ordnung |
+| `/cockpit/mitglieder` | Konten mit Stufe und Abo-Status; Akte mit Notizen und Abo von Hand |
+| `/cockpit/werkzeug` | Auswertung der Werkzeugwünsche mit Status |
+| `/cockpit/inhalte` | Medienbibliothek, Texte, Leistungen, FAQ, Kontakt, Rechtstexte, Phasen-Vorlagen, Community |
+| `/cockpit/anfragen`, `/cockpit/shop` | Warteliste und Kontakt mit Export; Shop-Überblick mit Link in den Shopify-Admin |
 
 ## Wo die Beispieldaten liegen
 
@@ -63,6 +72,8 @@ Alles an einer Stelle: **`lib/daten/`**. Wer Texte, Preise oder den Hallenplan �
 | `abo.ts` | Abo-Preis, Werkzeugpauschale, Shop-Rabatt, Buchungsfenster, Stufenvergleich, Event-Ordnung |
 | `phasen.ts` | Sebs Vorlagen: sechs Phasen mit Checkliste, Stückliste und Budget-Richtwert |
 | `kba.ts` | Beispiel-Schlüsselnummern (HSN/TSN) und die Antworten der simulierten Bildanalyse |
+| `camp.ts` | **Beispiel-Camp** fürs Cockpit: alle Buchungen, Sperrzeiten, Konten, Support-Verläufe, Anfragen, Medien, Shop-Bestellungen, Preise |
+| `texte.ts` | Pflegbare Texte der Website (Startseite, Seitenköpfe, Band zur Warteliste) |
 
 Die Datentypen stehen in `lib/types.ts` und gelten später auch für Mitgliederbereich und App.
 
@@ -108,13 +119,13 @@ Mitgliedschaft. Unveränderte Beispieldaten frischen sich nach drei Tagen selbst
 | Aktionen | `lib/services/mitglieder.ts` | Jede Funktion ist ein späterer API-Aufruf, prüft das Recht und meldet ein Ereignis |
 | Ereignisse | `lib/services/ereignisse.ts` → `app/api/ereignisse/route.ts` | Protokoll und Weiterleitung an n8n |
 | Bildanalyse, Fahrzeugdaten | `lib/services/analyse.ts` → `app/api/analyse/[art]/route.ts` | Weiterleitung an n8n, sonst simuliert |
-| Cockpit | `lib/services/cockpit.ts` | Nur Infrastruktur: Freigaben, „Werkzeug gekauft“, Auswertungen, Support-Kennzahlen. Keine Oberfläche. |
+| Cockpit | `lib/services/cockpit.ts` | Alle Admin-Aktionen; Oberfläche unter `/cockpit` (siehe Abschnitt Camp-Cockpit) |
 
 Zum Andocken ans Backend werden die Funktionskörper in `lib/services/mitglieder.ts` und `cockpit.ts` durch
 API-Aufrufe ersetzt und `useKonto()` liest den Zustand vom Server. Oberflächen und Ereignisse bleiben.
 
-Zwei gestrichelte „Demo“-Schalter (Event freigeben, Werkzeug gekauft) rufen die Cockpit-Funktionen auf, damit sich
-Sebs Seite vorführen lässt. Sebs Antworten im Chat sind simuliert.
+Freigaben, gekauftes Werkzeug und Antworten kommen aus dem Cockpit (siehe unten). Zwei gestrichelte „Demo“-Schalter
+im Mitgliederbereich springen direkt dorthin. Sebs automatische Chat-Antworten sind simuliert und abschaltbar.
 
 ### Wirkung auf die restliche Seite
 
@@ -163,6 +174,68 @@ Jede Aktion schickt per `POST` ein JSON dieser Form:
 
 Die Liste aller Typen steht als `EreignisTyp` in `lib/types.ts`.
 
+## Camp-Cockpit (Sebs Verwaltungsbereich)
+
+Plan: `docs/03-verwaltung.md`. In der Demo-Leiste oben auf **„Als Seb ansehen“** klicken. Ohne diesen Schalter zeigt
+`/cockpit` nur „Nur fürs Camp-Team“. Am Handy liegt die Navigation unten: Heute, Support, Buchungen, Mehr.
+
+### Ein Datenstand für alles
+
+Das Cockpit hat einen eigenen Speicher eingeführt, den jetzt auch Website und Mitgliederbereich lesen:
+
+| Baustein | Datei | Aufgabe |
+| --- | --- | --- |
+| Camp-Zustand | `lib/camp/store.ts` | `CampZustand` (Halle, Buchungen, Workshops, Preise, Inhalte, Konten, Medien). Hooks `useCamp()`, `usePreise()`, `usePhasen()`, `useAdmin()` |
+| Auswertungen | `lib/camp/auswertung.ts` | Reine Funktionen: Auslastung, Umsatz, Abo-Zahlen, Antwortzeit, Wunsch-Auswertung, Konflikte, CSV |
+| Cockpit-Aktionen | `lib/services/cockpit.ts` | Alles, was Seb tut. Jede Funktion prüft ein Admin-Recht und meldet ein Ereignis |
+| Öffentliche Schreibzugriffe | `lib/services/camp.ts` | Neue Buchung, Workshop-Reservierung, Anfrage – landen im Cockpit |
+| Live-Inhalte | `components/live/` | `<T k="…" />` für Texte, dazu Workshops, Leistungen, FAQ, Kontakt, Rechtstexte, Hallenfotos |
+
+Die Seiten rendern auf dem Server weiter mit den Beispieldaten aus `lib/daten/`. Im Browser übernehmen die
+Live-Komponenten den Stand aus dem Camp-Zustand. Deshalb wirkt alles, was Seb ändert, **sofort im selben Browser**
+auf Website und Mitgliederbereich – auch in einem zweiten Fenster. Dauerhaft gespeichert wird noch nichts:
+Der Stand liegt in `localStorage` (`cc-camp`, `cc-mein-camp`), unveränderte Beispieldaten frischen sich nach drei
+Tagen auf, „Cockpit zurücksetzen“ steht unter Inhalte → Community.
+
+Das Beispiel-Mitglied Jule behält ihr eigenes Konto (`lib/mein-camp/store.ts`). Events, ihr Chat und ihre Wünsche
+liegen dort; das Cockpit führt beides zusammen und schreibt Änderungen, die Jule betreffen, in ihr Konto zurück
+(Benachrichtigung inklusive).
+
+### Später: Backend andocken
+
+Im Plan vorgeschlagen ist Supabase mit Region EU (Datenbank, Login, Dateispeicher). Getauscht wird dann nur:
+
+- `lib/camp/store.ts` und `lib/mein-camp/store.ts`: Zustand vom Server laden statt aus `localStorage`
+- die Funktionskörper in `lib/services/cockpit.ts`, `camp.ts` und `mitglieder.ts`: API-Aufrufe statt `setCamp`/`setKonto`
+- `useAdmin()` / „Als Seb ansehen“: echtes Login mit der Rolle `admin`
+- `mediumHochladen()` und `verkleinere()`: Upload in den Dateispeicher, im Datensatz steht dann die URL
+
+Weitere Rollen (z. B. Aushilfe) lassen sich in `lib/rechte.ts` ergänzen; das Cockpit blendet Bereiche allein über
+`darf(rolle, recht)` ein.
+
+### Was im Cockpit simuliert ist
+
+- Kennzahlen, Konten, Support-Verläufe und Shop-Bestellungen sind Beispieldaten. Umsatz zählt nur Buchungen von Werkstattbuchten.
+- Der Shop-Überblick liest nicht aus Shopify; der Knopf führt auf `admin.shopify.com`.
+- „Nachricht an alle“ bei Absagen, Freigaben und gekauftem Werkzeug erzeugt ein Ereignis für n8n. Echte Mails oder
+  Pushes verschickt erst der n8n-Workflow.
+- Sebs automatische Chat-Antworten im Mitgliederbereich lassen sich im Support-Postfach abschalten.
+
+### Ereignisse aus dem Cockpit
+
+Gleiche Form wie oben, `akteur.rolle` ist `admin`. Zusätzliche Webhooks: `N8N_WEBHOOK_WORKSHOPS` (`workshop.*`) und
+`N8N_WEBHOOK_BUCHUNGEN` (`buchung.*`, `sperrzeit.*`); alles Übrige geht an `N8N_WEBHOOK_EREIGNISSE`.
+
+| Ereignistypen | Auslöser |
+| --- | --- |
+| `buchung.angelegt`, `buchung.verschoben`, `buchung.storniert`, `sperrzeit.gesetzt`, `sperrzeit.entfernt` | Belegungskalender |
+| `workshop.angelegt`, `workshop.geaendert`, `workshop.abgesagt` (mit `benachrichtigt`: E-Mails), `workshop.reserviert` | Workshops |
+| `event.freigegeben`, `event.abgelehnt` (mit `begruendung`), `event.geaendert` | Events |
+| `werkzeug.status`, `werkzeug.gekauft` (mit `benachrichtigt`), `werkzeug.angelegt` | Wünsche, Halle |
+| `support.beantwortet` (mit `bearbeitungszeitSek`), `abo.pausiert` / `abo.fortgesetzt` / `abo.gekuendigt` (mit `vonHand`), `mitglied.notiz` | Support, Mitglieder |
+| `halle.geaendert`, `preise.geaendert`, `inhalt.geaendert`, `medium.hochgeladen`, `medium.entfernt`, `projekt.ausgeblendet` | Halle, Inhalte |
+| `anfrage.eingegangen`, `anfrage.status` | Warteliste und Kontakt |
+
 ### App
 
 Die App nutzt später dieselben Datentypen (`lib/types.ts`), Rechte (`lib/rechte.ts`) und Endpunkte wie die Website:
@@ -189,4 +262,5 @@ GitHub → Vercel: Jeder Push erzeugt eine Vorschau, der Hauptzweig geht live. D
 - Echter Hallengrundriss, Preise, Werkzeugbestand
 - `robots` in `app/layout.tsx` freigeben
 - Abo-Preis, Werkzeugpauschale, Rabatt und Buchungsfenster in `lib/daten/abo.ts` (im Plan noch offen)
-- Echte Anmeldung: Bisher gibt es kein Login, der Mitgliederbereich ist eine Demo im Browser
+- Echte Anmeldung: Bisher gibt es kein Login, Mitgliederbereich und Cockpit sind eine Demo im Browser.
+  Vor dem Start muss `/cockpit` serverseitig geschützt werden – der Schalter „Als Seb ansehen“ ist kein Schutz.

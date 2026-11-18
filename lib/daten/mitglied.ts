@@ -76,9 +76,9 @@ export function beispielKonto(heute: string): KontoZustand {
       { id: "s4", von: "seb", zeit: zeit(heute, -2, "18:05"), text: "Stark. Wenn du am Verteiler bist, sag Bescheid – dann schau ich in der Bucht kurz drüber." },
     ],
     events: [
-      { id: "e1", titel: "Grillabend vor dem Rolltor", beschreibung: "Jeder bringt was mit, der Grill steht. Vans dürfen besichtigt werden.", datum: plusTage(heute, 5), von: "18:00", bis: "22:00", ort: "Vor dem Rolltor", maxPersonen: 30, angemeldet: 14, verantwortlich: "Malte", status: "freigegeben", vomCamp: false, vorgeschlagenVon: "Malte", ichDabei: true },
+      { id: "e1", titel: "Grillabend vor dem Rolltor", beschreibung: "Jeder bringt was mit, der Grill steht. Vans dürfen besichtigt werden.", datum: plusTage(heute, 5), von: "18:00", bis: "22:00", ort: "Vor dem Rolltor", maxPersonen: 30, angemeldet: 1, verantwortlich: "Malte", status: "vorgeschlagen", vomCamp: false, vorgeschlagenVon: "Malte", ichDabei: false },
       { id: "e2", titel: "Elektrik-Stammtisch", beschreibung: "Schaltpläne auf den Tisch. Seb und zwei alte Hasen schauen drüber.", datum: plusTage(heute, 9), von: "19:00", bis: "21:00", ort: "Lounge & Planungstisch", maxPersonen: 12, angemeldet: 9, verantwortlich: "Seb", status: "freigegeben", vomCamp: true, ichDabei: false },
-      { id: "e3", titel: "Van-Kino in der Halle", beschreibung: "Leinwand an die Hallenwand, Stühle aus der Lounge, ein Roadmovie.", datum: plusTage(heute, 17), von: "20:00", bis: "22:30", ort: "Fahrgasse in der Halle", maxPersonen: 25, angemeldet: 1, verantwortlich: "Jule", status: "vorgeschlagen", vomCamp: false, vorgeschlagenVon: "Jule", ichDabei: true },
+      { id: "e3", titel: "Van-Kino in der Halle", beschreibung: "Leinwand an die Hallenwand, Stühle aus der Lounge, ein Roadmovie.", datum: plusTage(heute, 17), von: "20:00", bis: "22:30", ort: "Fahrgasse in der Halle", maxPersonen: 25, angemeldet: 7, verantwortlich: "Jule", status: "freigegeben", vomCamp: false, vorgeschlagenVon: "Jule", ichDabei: true },
       { id: "e4", titel: "Reste-Flohmarkt", beschreibung: "Übrige Dämmung, Leisten, Kabelreste: tauschen statt wegwerfen.", datum: plusTage(heute, 24), von: "11:00", bis: "14:00", ort: "Fahrgasse in der Halle", maxPersonen: 40, angemeldet: 6, verantwortlich: "Seb", status: "freigegeben", vomCamp: true, ichDabei: false },
     ],
     hilfe: [
@@ -94,7 +94,7 @@ export function beispielKonto(heute: string): KontoZustand {
     benachrichtigungen: [
       { id: "n1", zeit: zeit(heute, -1, "09:15"), titel: "Dein Wunsch ist da!", text: "Der Akku-Blindnietmutternsetzer hängt jetzt an der Werkzeugwand.", link: "/mein-camp/werkzeugwuensche", gelesen: false },
       { id: "n2", zeit: zeit(heute, -2, "18:05"), titel: "Seb hat geantwortet", text: "„Wenn du am Verteiler bist, sag Bescheid …“", link: "/mein-camp/support", gelesen: false },
-      { id: "n3", zeit: zeit(heute, -4, "12:00"), titel: "Grillabend ist freigegeben", text: "Maltes Grillabend findet statt. Du bist angemeldet.", link: "/mein-camp/community", gelesen: true },
+      { id: "n3", zeit: zeit(heute, -4, "12:00"), titel: "Dein Event ist freigegeben", text: "„Van-Kino in der Halle“ findet statt und steht im Kalender.", link: "/mein-camp/community", gelesen: true },
     ],
     ereignisse: [],
   };

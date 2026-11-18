@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Abschnittskopf, Beispiel, Seitenkopf, WartelisteBand } from "@/components/Bausteine";
 import { IconInsta } from "@/components/Icons";
+import { T } from "@/components/live/T";
 import { Galerie } from "@/components/Galerie";
 import { SITE } from "@/lib/daten/site";
 import { getProjekte } from "@/lib/services/inhalte";
@@ -17,9 +18,9 @@ export default async function CommunitySeite() {
 
   return (
     <>
-      <Seitenkopf eyebrow="Aus der Halle" titel="Jeder Camper hier hat einen Namen">
+      <Seitenkopf eyebrow="Aus der Halle" titel={<T k="community.titel" />}>
         <p>
-          Im Camp wird nebeneinander gebaut, gefachsimpelt und geholfen. Das sind die Projekte aus der Halle – und die Menschen dahinter. Folg ihnen auf Instagram und schau zu, wie aus einem leeren Kastenwagen ein Zuhause wird.
+          <T k="community.text" /> Folg ihnen auf Instagram und schau zu, wie aus einem leeren Kastenwagen ein Zuhause wird.
         </p>
       </Seitenkopf>
 

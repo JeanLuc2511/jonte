@@ -9,9 +9,12 @@ const GRUPPEN: Record<string, string | undefined> = {
   support: process.env.N8N_WEBHOOK_SUPPORT,
   werkzeug: process.env.N8N_WEBHOOK_WERKZEUG,
   abo: process.env.N8N_WEBHOOK_ABO,
+  workshop: process.env.N8N_WEBHOOK_WORKSHOPS,
+  buchung: process.env.N8N_WEBHOOK_BUCHUNGEN,
+  sperrzeit: process.env.N8N_WEBHOOK_BUCHUNGEN,
 };
 
-const TYP = /^(konto|abo|fahrzeug|projekt|buchung|support|event|hilfe|werkzeug)\.[a-z]+$/;
+const TYP = /^(konto|abo|fahrzeug|projekt|buchung|sperrzeit|halle|preise|workshop|support|event|hilfe|werkzeug|mitglied|inhalt|medium|anfrage)\.[a-z]+$/;
 
 export async function POST(request: Request) {
   let ereignis: { typ?: unknown };

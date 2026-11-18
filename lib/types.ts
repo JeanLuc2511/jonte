@@ -62,6 +62,8 @@ export interface Werkzeug {
   anzahl: number;
   /** Nutzung erst nach kurzer Einweisung */
   einweisung?: boolean;
+  /** Foto aus der Medienbibliothek (Data-URL in der Demo, später Bild-URL) */
+  foto?: string;
 }
 
 /* ---------- Buchungen ---------- */
@@ -82,6 +84,8 @@ export interface Belegung {
   crew: string;
   phase: string;
   instagram?: string;
+  /** Sperrzeit statt Buchung (Urlaub, Wartung, Event) */
+  gesperrt?: string;
 }
 
 export type LeistungId = "bucht" | "workshop" | "beratung" | "gaspruefung";
@@ -137,6 +141,18 @@ export interface Workshop {
   level: "Einsteiger" | "Fortgeschritten";
   leitung: string;
   inhalte: string[];
+  /** Bis so viele Tage vorher muss die Mindestzahl erreicht sein */
+  absagefristTage?: number;
+  abgesagt?: boolean;
+  teilnehmer?: WorkshopTeilnehmer[];
+  /** ID eines Bildes aus der Medienbibliothek */
+  bild?: string;
+}
+
+export interface WorkshopTeilnehmer {
+  name: string;
+  email: string;
+  telefon?: string;
 }
 
 export type WorkshopStatus = "offen" | "findet-statt" | "ausgebucht";
@@ -190,6 +206,8 @@ export interface Projekt {
   instagram: string;
   /** In der Demo zeigen alle Links auf instagram.com – später das echte Profil */
   instagramUrl: string;
+  /** Vom Camp-Team ausgeblendet (z. B. sichtbare Kennzeichen) */
+  ausgeblendet?: boolean;
 }
 
 /* ---------- FAQ ---------- */
@@ -349,6 +367,9 @@ export interface SupportNachricht {
   zeit: string;
   foto?: string;
   art?: "nachricht" | "hilferuf" | "videotermin" | "grenze";
+  /** Hilferuf: aus welcher Werkstattbucht, und ob Seb ihn erledigt hat */
+  buchtId?: string;
+  erledigt?: boolean;
 }
 
 export type EventStatus = "vorgeschlagen" | "freigegeben" | "abgelehnt";
@@ -369,6 +390,8 @@ export interface CampEvent {
   vomCamp: boolean;
   vorgeschlagenVon?: string;
   ichDabei: boolean;
+  /** Kurze Begründung von Seb bei Freigabe oder Ablehnung */
+  begruendung?: string;
 }
 
 export interface HilfeEintrag {
@@ -413,7 +436,17 @@ export type EreignisTyp =
   | "support.nachricht" | "support.hilferuf" | "support.videotermin" | "support.beantwortet"
   | "event.vorgeschlagen" | "event.freigegeben" | "event.abgelehnt" | "event.angemeldet" | "event.abgemeldet"
   | "hilfe.eintrag" | "hilfe.antwort"
-  | "werkzeug.gewuenscht" | "werkzeug.gekauft";
+  | "werkzeug.gewuenscht" | "werkzeug.gekauft" | "werkzeug.status" | "werkzeug.angelegt"
+  // Cockpit (Camp-Team)
+  | "buchung.angelegt" | "buchung.verschoben" | "buchung.storniert"
+  | "sperrzeit.gesetzt" | "sperrzeit.entfernt"
+  | "halle.geaendert" | "preise.geaendert"
+  | "workshop.angelegt" | "workshop.geaendert" | "workshop.abgesagt" | "workshop.reserviert"
+  | "event.geaendert"
+  | "mitglied.notiz"
+  | "inhalt.geaendert" | "medium.hochgeladen" | "medium.entfernt"
+  | "projekt.ausgeblendet"
+  | "anfrage.eingegangen" | "anfrage.status";
 
 export interface Ereignis {
   id: string;
@@ -458,4 +491,152 @@ export interface ScheinAnalyse {
   tsn?: string;
   demo?: boolean;
   fehler?: string;
+}
+
+/* ====================================================================== */
+/*  CAMP-COCKPIT – alles, was Seb pflegt und sieht                         */
+/* ====================================================================== */
+
+export type BuchungsQuelle = "online" | "telefon" | "walk-in";
+
+/** Eine Buchung einer Werkstattbucht, wie sie das Buchungs-Backend führt. */
+export interface HallenBuchung {
+  id: string;
+  buchtId: string;
+  von: string;
+  bis: string;
+  status: "bestaetigt" | "storniert";
+  quelle: BuchungsQuelle;
+  /** leer bei Gästen ohne Konto */
+  mitgliedId?: string;
+  kunde: { name: string; email?: string; telefon?: string };
+  fahrzeug: { spitzname: string; modell: string; typ: FahrzeugId | "anderes"; farbe: string };
+  phase?: string;
+  instagram?: string;
+  summe: number;
+  notiz?: string;
+}
+
+export interface Sperrzeit {
+  id: string;
+  buchtIds: string[];
+  von: string;
+  bis: string;
+  grund: string;
+}
+
+export interface Preise {
+  preisProMonat: number;
+  werkzeugpauschaleProTag: number;
+  stundenpreis: number;
+  /** Rabatt ab 7 Tagen, als Anteil (0,15 = 15 %) */
+  wochenrabatt: number;
+  shopRabatt: number;
+  buchungsfensterTage: { standard: number; mitglied: number };
+}
+
+export type WunschStatus = "neu" | "geprueft" | "gekauft" | "abgelehnt";
+
+/** Was Seb zu einem Konto sieht. Für das Beispiel-Mitglied wird die Akte live aus dessen Konto gebaut. */
+export interface MitgliedAkte {
+  mitglied: Mitglied;
+  fahrzeuge: { spitzname: string; modell: string; farbe: string }[];
+  projekt?: { titel: string; phase: PhasenId; eintraege: number; oeffentlich: boolean; fotos: string[] };
+  buchungen: number;
+  letzteBuchung?: string;
+}
+
+export interface SupportFall {
+  mitgliedId: string;
+  nachrichten: SupportNachricht[];
+}
+
+export type AnfrageStatus = "neu" | "kontaktiert" | "erledigt";
+
+export interface Anfrage {
+  id: string;
+  art: "warteliste" | "kontakt";
+  /** ISO-Zeitstempel */
+  zeit: string;
+  name: string;
+  email: string;
+  telefon?: string;
+  status: AnfrageStatus;
+  /** Antworten des Formulars (Frage → Antwort) */
+  angaben: Record<string, string>;
+}
+
+export type MedienKategorie = "halle" | "galerie" | "workshop" | "werkzeug" | "sonstiges";
+
+export interface Medium {
+  id: string;
+  name: string;
+  /** Data-URL in der Demo, später URL im EU-Dateispeicher; `motiv:*` = gezeichnetes Beispielbild */
+  quelle: string;
+  kategorie: MedienKategorie;
+  datum: string;
+  /** Hallenfotos mit Haken erscheinen auf der Werkstatt-Seite */
+  aufWebsite: boolean;
+}
+
+export interface Rechtsseite {
+  slug: string;
+  titel: string;
+  intro: string;
+  abschnitte: { titel: string; text: string }[];
+}
+
+export interface KontaktDaten {
+  email: string;
+  telefon: string;
+  oeffnungszeiten: { tage: string; zeit: string }[];
+  hinweise: string[];
+}
+
+export interface ShopBestellung {
+  nummer: string;
+  kunde: string;
+  datum: string;
+  summe: number;
+  status: "offen" | "abholbereit" | "versendet";
+  lieferungAnBucht?: string;
+}
+
+/**
+ * Der gemeinsame Datenstand des Camps: Halle, Buchungen, Workshops, Inhalte, Konten.
+ * Website und Mitgliederbereich lesen ihn, das Cockpit ändert ihn.
+ * Später liefert ihn das Backend (Vorschlag im Plan: Supabase, Region EU).
+ */
+export interface CampZustand {
+  version: number;
+  seedTag: string;
+  zonen: Zone[];
+  werkzeuge: Werkzeug[];
+  preise: Preise;
+  buchungen: HallenBuchung[];
+  sperrzeiten: Sperrzeit[];
+  workshops: Workshop[];
+  leistungen: Leistung[];
+  /** Konten außer dem Beispiel-Mitglied der Demo */
+  mitglieder: MitgliedAkte[];
+  /** Interne Notizen von Seb je Mitglied-ID */
+  notizen: Record<string, string>;
+  support: SupportFall[];
+  /** Simulierte Antworten von Seb im Mitglieder-Chat (nur Demo) */
+  autoAntwort: boolean;
+  /** Wünsche der anderen Mitglieder; die des Beispiel-Mitglieds liegen in dessen Konto */
+  wuensche: Werkzeugwunsch[];
+  wunschStatus: Record<string, WunschStatus>;
+  anfragen: Anfrage[];
+  medien: Medium[];
+  texte: Record<string, string>;
+  faq: FaqGruppe[];
+  kontakt: KontaktDaten;
+  rechtliches: Rechtsseite[];
+  eventOrdnung: string[];
+  phasen: PhasenVorlage[];
+  projekte: Projekt[];
+  /** IDs ausgeblendeter Mitglieder-Projekte (Projekt-ID aus dem Konto) */
+  ausgeblendet: string[];
+  shop: ShopBestellung[];
 }

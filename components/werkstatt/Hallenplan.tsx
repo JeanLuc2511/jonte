@@ -73,7 +73,7 @@ export function Hallenplan({
         const cx = z.x + z.w / 2;
         const quer = z.bucht?.ausrichtung === "quer";
         const status = istBucht
-          ? b ? b.fahrzeug.spitzname : zeigeFrei ? "frei" : `bis ${String(z.bucht!.maxLaengeM).replace(".", ",")} m`
+          ? b ? (b.gesperrt ? "gesperrt" : b.fahrzeug.spitzname) : zeigeFrei ? "frei" : `bis ${String(z.bucht!.maxLaengeM).replace(".", ",")} m`
           : null;
 
         return (
@@ -83,7 +83,7 @@ export function Hallenplan({
             role={interaktiv ? "button" : undefined}
             tabIndex={interaktiv ? 0 : undefined}
             aria-pressed={interaktiv ? auswahl === z.id : undefined}
-            aria-label={interaktiv ? `${z.name}${istBucht ? (b ? `, belegt von ${b.fahrzeug.spitzname}` : zeigeFrei ? ", frei" : "") : ""}` : undefined}
+            aria-label={interaktiv ? `${z.name}${istBucht ? (b ? (b.gesperrt ? ", gesperrt" : `, belegt von ${b.fahrzeug.spitzname}`) : zeigeFrei ? ", frei" : "") : ""}` : undefined}
             onClick={interaktiv ? () => onAuswahl?.(z.id) : undefined}
             onKeyDown={interaktiv ? (e) => {
               if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onAuswahl?.(z.id); }
@@ -99,7 +99,10 @@ export function Hallenplan({
               strokeDasharray={istBucht && !aktiv ? "14 8" : undefined}
             />
             <Dekor zone={z} />
-            {b && (
+            {b?.gesperrt && (
+              <path d={`M${z.x + 14} ${z.y + 14}L${z.x + z.w - 14} ${z.y + z.h - 14}M${z.x + z.w - 14} ${z.y + 14}L${z.x + 14} ${z.y + z.h - 14}`} stroke={HOLZ} strokeWidth="3" pointerEvents="none" />
+            )}
+            {b && !b.gesperrt && (
               <g
                 transform={quer
                   ? `translate(${z.x + 84} ${z.y + z.h / 2 + 50}) rotate(-90) scale(1 1.2)`

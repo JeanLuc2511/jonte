@@ -17,8 +17,11 @@ Beispieldaten, gebaut als Fundament für den echten Auftritt. Überblick und And
 - `lib/types.ts` – gemeinsame Datentypen (auch für Mitgliederbereich, App und Cockpit)
 - `app/mein-camp/`, `components/mein-camp/` – Mitgliederbereich; Plan in `docs/02-mitgliederbereich.md`
 - `lib/rechte.ts` – Rollen (`gast`, `konto`, `mitglied`, `admin`) und Rechte-Matrix
-- `lib/mein-camp/store.ts` – Konto-Zustand der Demo; `lib/services/mitglieder.ts` – alle Aktionen;
-  `lib/services/cockpit.ts` – Admin-Funktionen ohne Oberfläche
+- `lib/mein-camp/store.ts` – Konto-Zustand der Demo; `lib/services/mitglieder.ts` – alle Aktionen der Mitglieder
+- `app/cockpit/`, `components/cockpit/` – Sebs Verwaltungsbereich; Plan in `docs/03-verwaltung.md`
+- `lib/camp/store.ts` – gemeinsamer Camp-Zustand (Halle, Buchungen, Workshops, Preise, Inhalte, Medien);
+  `lib/camp/auswertung.ts` – Kennzahlen als reine Funktionen; `lib/services/cockpit.ts` – alle Admin-Aktionen
+- `components/live/` – Teile der Website, die den Camp-Zustand live anzeigen (`<T k="…" />` für Texte)
 
 ## Regeln
 
@@ -26,6 +29,13 @@ Beispieldaten, gebaut als Fundament für den echten Auftritt. Überblick und And
   Ausnahme: feste Konfiguration (`abo.ts`, `phasen.ts`, `fahrzeuge.ts`) dürfen Komponenten direkt importieren.
 - Im Mitgliederbereich: Zustand nur über `lib/services/mitglieder.ts` ändern, Sichtbarkeit nur über
   `darf(rolle, recht)` steuern, jede Aktion meldet ein Ereignis (`melde(...)`).
+- Alles, was Seb pflegt (Halle, Preise, Workshops, Texte, FAQ, Phasen), kommt im Browser aus dem Camp-Zustand:
+  `useCamp()`, `usePreise()`, `usePhasen()` statt fester Importe. Server-Seiten geben die Beispieldaten nur als
+  Startwert mit. Neue pflegbare Texte in `lib/daten/texte.ts` eintragen und mit `<T k="…" />` ausgeben.
+- Im Cockpit: Zustand nur über `lib/services/cockpit.ts` ändern. Jede Aktion prüft ein Admin-Recht, meldet ein
+  Ereignis und schreibt Änderungen, die das Beispiel-Mitglied betreffen, mit Benachrichtigung in dessen Konto.
+- Produkte und Bestellungen bleiben im Shopify-Admin; das Cockpit zeigt nur einen Überblick.
+- „Heute in der Halle“ und „Support“ müssen am Handy mit einer Hand bedienbar bleiben (Navigation unten).
 - Externe Dienste (Bildanalyse, Fahrzeugdaten, Benachrichtigungen) laufen über n8n-Webhooks hinter
   eigenen Routen in `app/api/` und werden ohne Webhook simuliert. Fahrzeugschein-Fotos nie speichern.
 - Alles, was vom Tagesdatum abhängt, wird im Browser berechnet (`useHeute()`) oder per `revalidate` erneuert.

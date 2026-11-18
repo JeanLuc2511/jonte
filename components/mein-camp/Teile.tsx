@@ -1,7 +1,8 @@
 "use client";
 
+import { usePreise } from "@/lib/camp/store";
+import { STUFEN_VERGLEICH } from "@/lib/daten/abo";
 import Link from "next/link";
-import { ABO, STUFEN_VERGLEICH } from "@/lib/daten/abo";
 import { euro } from "@/lib/datum";
 import type { Recht } from "@/lib/rechte";
 import { darf } from "@/lib/rechte";
@@ -25,6 +26,7 @@ export function BereichKopf({ eyebrow, titel, children, aktion }: { eyebrow: str
 
 /** Zeigt den Inhalt nur mit dem nötigen Recht – sonst, was die Mitgliedschaft hier bringt. */
 export function NurMit({ recht, titel, text, children }: { recht: Recht; titel: string; text: string; children: React.ReactNode }) {
+  const ABO = usePreise();
   const rolle = useRolle();
   if (!rolle) return null;
   if (darf(rolle, recht)) return <>{children}</>;
@@ -44,6 +46,7 @@ export function NurMit({ recht, titel, text, children }: { recht: Recht; titel: 
 
 /** Vergleich der drei Kontostufen. */
 export function StufenVergleich({ aktuelle }: { aktuelle?: string | null }) {
+  const ABO = usePreise();
   const spalten = [
     { id: "gast", name: "Gast", preis: "ohne Konto" },
     { id: "konto", name: "Konto", preis: "kostenlos" },
@@ -69,7 +72,11 @@ export function StufenVergleich({ aktuelle }: { aktuelle?: string | null }) {
           </tr>
         </thead>
         <tbody>
-          {STUFEN_VERGLEICH.map((z) => (
+          {STUFEN_VERGLEICH.map((z) => ({
+            ...z,
+            mitglied: z.zeile === "Rabatt im Fachshop" ? `${Math.round(ABO.shopRabatt * 100)} %`
+              : z.zeile === "Früheres Buchungsfenster" ? `${ABO.buchungsfensterTage.mitglied} statt ${ABO.buchungsfensterTage.standard} Tage` : z.mitglied,
+          })).map((z) => (
             <tr key={z.zeile}>
               <th scope="row" className="border-b border-line p-3 font-medium">{z.zeile}</th>
               <td className="border-b border-line p-3 text-center">{zelle(z.gast)}</td>

@@ -1,9 +1,9 @@
 "use client";
 
+import { usePhasen } from "@/lib/camp/store";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { ZEITFENSTER } from "@/lib/daten/leistungen";
-import { PHASEN } from "@/lib/daten/phasen";
 import { formatLang, isoHeute, plusTage } from "@/lib/datum";
 import { useKonto } from "@/lib/mein-camp/store";
 import { verkleinere } from "@/lib/services/analyse";
@@ -28,6 +28,7 @@ export function Support() {
 }
 
 function Chat() {
+  const PHASEN = usePhasen();
   const z = useKonto();
   const [text, setText] = useState("");
   const [foto, setFoto] = useState<string | undefined>();
@@ -128,7 +129,9 @@ function Chat() {
           {laeuft ? (
             <>
               <p className="mt-2 text-muted">Du bist gerade in {laeuft.titel}. Ein Klick, und Seb weiß, wo er gebraucht wird.</p>
-              <button type="button" className="btn btn-primary mt-4 w-full" onClick={hilferuf}>Seb in die Bucht rufen</button>
+              {z.support.some((n) => n.art === "hilferuf" && n.erledigt === false)
+                ? <p className="mt-4 border border-line-strong p-3 font-semibold" role="status">Dein Hilferuf ist bei Seb. Er meldet sich gleich.</p>
+                : <button type="button" className="btn btn-primary mt-4 w-full" onClick={hilferuf}>Seb in die Bucht rufen</button>}
             </>
           ) : (
             <p className="mt-2 text-muted">Der Knopf ist aktiv, solange du eine Werkstattbucht gebucht hast und in der Halle bist.</p>

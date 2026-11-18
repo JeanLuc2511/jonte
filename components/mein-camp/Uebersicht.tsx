@@ -1,9 +1,8 @@
 "use client";
 
+import { usePhasen, usePreise } from "@/lib/camp/store";
 import Link from "next/link";
 import { useState } from "react";
-import { ABO } from "@/lib/daten/abo";
-import { PHASEN, phase } from "@/lib/daten/phasen";
 import { euro, formatKurz, formatLang, isoHeute } from "@/lib/datum";
 import { useKonto, useRolle } from "@/lib/mein-camp/store";
 import { darf } from "@/lib/rechte";
@@ -13,6 +12,9 @@ import { VanSeite } from "../Van";
 import { BereichKopf } from "./Teile";
 
 export function Uebersicht() {
+  const ABO = usePreise();
+  const PHASEN = usePhasen();
+  const phase = (id: string) => PHASEN.find((p) => p.id === id);
   const z = useKonto();
   const rolle = useRolle();
   const [gerufen, setGerufen] = useState(false);
@@ -49,8 +51,8 @@ export function Uebersicht() {
             </p>
           </div>
           {darf(rolle, "support") ? (
-            gerufen
-              ? <p className="max-w-xs font-semibold" role="status">Seb weiß Bescheid und kommt in deine Werkstattbucht.</p>
+            gerufen || z.support.some((n) => n.art === "hilferuf" && n.erledigt === false)
+              ? <p className="max-w-xs font-semibold" role="status">Dein Hilferuf ist bei Seb angekommen.</p>
               : <button type="button" className="btn btn-primary shrink-0" onClick={() => { hilferuf(); setGerufen(true); }}>Ich komm nicht weiter</button>
           ) : (
             <Link href="/mein-camp/support" className="btn btn-outline shrink-0">Hilfe von Seb holen</Link>
