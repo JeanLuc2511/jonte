@@ -483,6 +483,8 @@ export interface BelegAnalyse {
   positionen?: { name: string; betrag: number }[];
   demo?: boolean;
   fehler?: string;
+  /** Die Abfrage braucht eine (richtige) PIN-Freigabe */
+  pinNoetig?: boolean;
 }
 
 export interface ScheinAnalyse {
@@ -491,6 +493,7 @@ export interface ScheinAnalyse {
   tsn?: string;
   demo?: boolean;
   fehler?: string;
+  pinNoetig?: boolean;
 }
 
 /* ====================================================================== */

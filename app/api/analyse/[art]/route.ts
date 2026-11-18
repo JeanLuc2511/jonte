@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { BEISPIEL_BELEG, BEISPIEL_SCHEIN, KBA_BEISPIELE } from "@/lib/daten/kba";
+import { pinEingerichtet, pruefeFreigabe } from "@/lib/server/freigabe";
 import type { BelegAnalyse, Fahrzeugdaten, ScheinAnalyse } from "@/lib/types";
 
 /**
@@ -8,6 +9,10 @@ import type { BelegAnalyse, Fahrzeugdaten, ScheinAnalyse } from "@/lib/types";
  *   fahrzeugschein  Foto  → { hsn, tsn }                      N8N_WEBHOOK_FAHRZEUGSCHEIN
  *   fahrzeugdaten   JSON  → { hersteller, modell, motor, … }  N8N_WEBHOOK_FAHRZEUGDATEN
  *   beleg           Foto  → { haendler, datum, betrag, … }    N8N_WEBHOOK_BELEG
+ *
+ * Die beiden KI-Abfragen (fahrzeugschein, beleg) brauchen pro Anfrage eine PIN-Freigabe:
+ * Die PIN steht nur in der Umgebungsvariable KI_PIN und kommt im Header `x-freigabe-pin`.
+ * Ohne gültige PIN wird der Webhook nicht aufgerufen.
  *
  * Fotos werden hier nur durchgereicht und nirgends gespeichert. Ohne Webhook antwortet die
  * Route mit Beispielwerten (`demo: true`) und liest das Foto gar nicht erst aus.
@@ -45,7 +50,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ art
       return NextResponse.json<Fahrzeugdaten>(treffer ? { gefunden: true, hsn: h, tsn: t, ...treffer, demo: true } : { gefunden: false, hsn: h, tsn: t, demo: true });
     }
 
-    // Foto-Analysen
+    // Foto-Analysen = KI-Abfragen: erst die PIN prüfen, dann erst Foto lesen und Webhook rufen.
+    if (webhook || pinEingerichtet()) {
+      const freigabe = pruefeFreigabe(request);
+      if (!freigabe.ok) return NextResponse.json({ ok: false, fehler: freigabe.fehler, pinNoetig: freigabe.pinNoetig }, { status: freigabe.status });
+    }
     if (!webhook) {
       await warte(1400);
       if (art === "fahrzeugschein") return NextResponse.json<ScheinAnalyse>({ ok: true, ...BEISPIEL_SCHEIN, demo: true });

@@ -6,11 +6,12 @@
  */
 import type { BelegAnalyse, Fahrzeugdaten, ScheinAnalyse } from "@/lib/types";
 
-async function mitFoto<T extends { ok: boolean; fehler?: string }>(art: string, foto: File): Promise<T> {
+async function mitFoto<T extends { ok: boolean; fehler?: string }>(art: string, foto: File, pin?: string): Promise<T> {
   const form = new FormData();
   form.append("foto", foto);
   try {
-    const res = await fetch(`/api/analyse/${art}`, { method: "POST", body: form });
+    // Die PIN geht pro Abfrage im Header mit und wird nirgends gespeichert; geprüft wird sie auf dem Server.
+    const res = await fetch(`/api/analyse/${art}`, { method: "POST", body: form, headers: pin ? { "x-freigabe-pin": pin } : undefined });
     return (await res.json()) as T;
   } catch {
     return { ok: false, fehler: "Keine Verbindung. Trag die Daten bitte von Hand ein." } as T;
@@ -18,10 +19,20 @@ async function mitFoto<T extends { ok: boolean; fehler?: string }>(art: string, 
 }
 
 /** Liest nur HSN (Feld 2.1) und TSN (Feld 2.2). Das Foto wird nicht gespeichert. */
-export const leseFahrzeugschein = (foto: File) => mitFoto<ScheinAnalyse>("fahrzeugschein", foto);
+export const leseFahrzeugschein = (foto: File, pin?: string) => mitFoto<ScheinAnalyse>("fahrzeugschein", foto, pin);
 
 /** Liest Händler, Datum, Betrag und Positionen aus einem Beleg. */
-export const leseBeleg = (foto: File) => mitFoto<BelegAnalyse>("beleg", foto);
+export const leseBeleg = (foto: File, pin?: string) => mitFoto<BelegAnalyse>("beleg", foto, pin);
+
+/** Fragt den Server, ob KI-Abfragen eine PIN-Freigabe brauchen. */
+export async function brauchtPin(): Promise<boolean> {
+  try {
+    const res = await fetch("/api/analyse/freigabe", { cache: "no-store" });
+    return Boolean(((await res.json()) as { pinNoetig?: boolean }).pinNoetig);
+  } catch {
+    return true;
+  }
+}
 
 export async function ladeFahrzeugdaten(hsn: string, tsn: string): Promise<Fahrzeugdaten> {
   try {

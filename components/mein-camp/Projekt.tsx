@@ -6,7 +6,7 @@ import { useRef, useState } from "react";
 import { euro, formatLang, isoHeute } from "@/lib/datum";
 import { useKonto, useRolle } from "@/lib/mein-camp/store";
 import { darf } from "@/lib/rechte";
-import { leseBeleg, verkleinere } from "@/lib/services/analyse";
+import { brauchtPin, leseBeleg, verkleinere } from "@/lib/services/analyse";
 import {
   budgetEintragen, budgetGeplantSetzen, budgetLoeschen, checklisteUmschalten, phaseSetzen,
   sichtbarkeitSetzen, stuecklisteBestellt, tagebuchLoeschen, tagebuchSchreiben,
@@ -15,6 +15,7 @@ import type { Ausbauprojekt, BudgetEintrag, PhasenId, PhasenVorlage, Produkt } f
 import { warenkorb } from "@/lib/warenkorb";
 import { Beispiel } from "../Bausteine";
 import { IconAuge, IconHaken, IconKamera, IconSchloss } from "../Icons";
+import { PinFreigabe } from "./PinFreigabe";
 import { BereichKopf, Feldgruppe, Foto } from "./Teile";
 
 type Reiter = "plan" | "budget" | "tagebuch";
@@ -221,17 +222,28 @@ function Budget({ projekt, phase }: { projekt: Ausbauprojekt; phase: PhasenId })
   const [form, setForm] = useState<null | { haendler: string; datum: string; betrag: string; phase: PhasenId; quelle: "beleg" | "manuell"; positionen?: { name: string; betrag: number }[] }>(null);
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
+  const [wartet, setWartet] = useState<File | null>(null);
+  const [pinFehler, setPinFehler] = useState<string | null>(null);
   const datei = useRef<HTMLInputElement>(null);
 
   const jePhase = (id: PhasenId) => projekt.budget.filter((b) => b.phase === id).reduce((s, b) => s + b.betrag, 0);
   const ausgegeben = projekt.budget.reduce((s, b) => s + b.betrag, 0);
   const geplant = Object.values(projekt.budgetGeplant).reduce((s, b) => s + b, 0);
 
-  async function beleg(file: File) {
-    setLaedt(true); setFehler(null); setForm(null);
-    const a = await leseBeleg(file);
+  // Beleg gewählt: Braucht die KI-Abfrage eine PIN, wartet das Foto auf die Freigabe.
+  async function belegGewaehlt(file: File) {
+    setFehler(null); setPinFehler(null); setForm(null);
     if (datei.current) datei.current.value = "";
+    if (await brauchtPin()) setWartet(file);
+    else await beleg(file);
+  }
+
+  async function beleg(file: File, pin?: string) {
+    setLaedt(true); setFehler(null); setForm(null);
+    const a = await leseBeleg(file, pin);
     setLaedt(false);
+    if (a.pinNoetig) { setWartet(file); setPinFehler(a.fehler ?? "Die PIN stimmt nicht."); return; }
+    setWartet(null); setPinFehler(null);
     if (!a.ok) { setFehler(a.fehler ?? "Der Beleg war nicht lesbar."); return; }
     setForm({ haendler: a.haendler ?? "", datum: a.datum ?? isoHeute(), betrag: String(a.betrag ?? ""), phase, quelle: "beleg", positionen: a.positionen });
   }
@@ -278,8 +290,13 @@ function Budget({ projekt, phase }: { projekt: Ausbauprojekt; phase: PhasenId })
         <div className="flex flex-wrap gap-3">
           <button type="button" className="btn btn-primary" onClick={() => datei.current?.click()} disabled={laedt}><IconKamera width={18} height={18} /> Beleg fotografieren</button>
           <button type="button" className="btn btn-outline" onClick={() => { setFehler(null); setForm({ haendler: "", datum: isoHeute(), betrag: "", phase, quelle: "manuell" }); }}>Von Hand eintragen</button>
-          <input ref={datei} type="file" accept="image/*" capture="environment" className="sr-only" aria-label="Foto vom Beleg" onChange={(e) => e.target.files?.[0] && beleg(e.target.files[0])} />
+          <input ref={datei} type="file" accept="image/*" capture="environment" className="sr-only" aria-label="Foto vom Beleg" onChange={(e) => e.target.files?.[0] && belegGewaehlt(e.target.files[0])} />
         </div>
+        {wartet && !laedt && (
+          <div className="buehne mt-4 px-4 pb-4 pt-px">
+            <PinFreigabe was="Dein Beleg-Foto" fehler={pinFehler} onFreigabe={(pin) => beleg(wartet, pin)} onAbbruch={() => { setWartet(null); setPinFehler(null); setFehler(null); setForm({ haendler: "", datum: isoHeute(), betrag: "", phase, quelle: "manuell" }); }} />
+          </div>
+        )}
         <div aria-live="polite">
           {laedt && <p className="puls mt-4 font-semibold">Beleg wird gelesen: Händler, Datum, Betrag, Positionen …</p>}
           {fehler && <p className="mt-4 border border-line p-3 font-semibold">{fehler}</p>}

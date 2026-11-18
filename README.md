@@ -149,6 +149,22 @@ Alle URLs sind Umgebungsvariablen (Vorlage: `.env.example`) und bleiben auf dem 
 
 Die Website speichert keines dieser Fotos; die Route reicht sie nur durch.
 
+**PIN-Freigabe für KI-Abfragen**
+
+Die beiden Bildanalysen (Fahrzeugschein, Beleg) kosten pro Abfrage Geld beim KI-Dienst. Deshalb muss jede einzelne
+Abfrage mit einer PIN freigegeben werden:
+
+- Die PIN steht nur in der Umgebungsvariable `KI_PIN` (Vercel → Settings → Environment Variables, lokal `.env.local`).
+  Sie steht nicht im Code und wird nicht an den Browser ausgeliefert.
+- Der Browser schickt die eingegebene PIN im Header `x-freigabe-pin` mit; geprüft wird in
+  `lib/server/freigabe.ts`. Ohne gültige PIN wird der Webhook nicht aufgerufen. Die PIN wird nirgends
+  zwischengespeichert, also bei jeder Abfrage neu verlangt.
+- Nach fünf falschen Versuchen ist der Absender 15 Minuten gesperrt (einfacher Schutz pro Server-Instanz).
+- Ist ein Bild-Webhook gesetzt, aber `KI_PIN` fehlt, bleibt die Bildanalyse gesperrt.
+- Die Fahrzeugdaten-Abfrage über HSN/TSN ist keine KI-Abfrage und braucht keine PIN.
+
+Nach dem Ändern von `KI_PIN` oder einem Webhook in Vercel muss neu deployt werden, damit der Wert gilt.
+
 **Ereignisse – n8n muss nur mit 2xx antworten**
 
 Jede Aktion schickt per `POST` ein JSON dieser Form:

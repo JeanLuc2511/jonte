@@ -6,12 +6,13 @@ import { FAHRZEUGE, fahrzeugName } from "@/lib/daten/fahrzeuge";
 import { DACHHOEHEN, HOEHE_M, KBA_BEISPIELE, LAENGE_M, RADSTAENDE } from "@/lib/daten/kba";
 import { PHASEN } from "@/lib/daten/phasen";
 import { useKonto } from "@/lib/mein-camp/store";
-import { ladeFahrzeugdaten, leseFahrzeugschein } from "@/lib/services/analyse";
+import { brauchtPin, ladeFahrzeugdaten, leseFahrzeugschein } from "@/lib/services/analyse";
 import { fahrzeugAktivieren, fahrzeugAnlegen, fahrzeugEntfernen } from "@/lib/services/mitglieder";
 import type { Fahrzeugdaten, GaragenFahrzeug } from "@/lib/types";
 import { Beispiel } from "../Bausteine";
 import { IconKamera, IconPlus } from "../Icons";
 import { VanSeite } from "../Van";
+import { PinFreigabe } from "./PinFreigabe";
 import { BereichKopf, Feldgruppe } from "./Teile";
 
 const STAND: Record<string, string> = { leer: "Leer, noch nichts gemacht", fertig: "Fertig ausgebaut", ...Object.fromEntries(PHASEN.map((p) => [p.id, `In der Phase ${p.name}`])) };
@@ -90,6 +91,8 @@ function Anlegen({ nr, onFertig }: { nr: number; onFertig: () => void }) {
   const [hinweis, setHinweis] = useState<string | null>(null);
   const [daten, setDaten] = useState<Fahrzeugdaten | null>(null);
   const [vomFoto, setVomFoto] = useState(false);
+  const [wartet, setWartet] = useState<File | null>(null);
+  const [pinFehler, setPinFehler] = useState<string | null>(null);
   const datei = useRef<HTMLInputElement>(null);
   const [f, setF] = useState({
     spitzname: "", hersteller: "", modell: "", typ: "anderes" as GaragenFahrzeug["typ"], baujahr: "", radstand: "L2", dachhoehe: "H2",
@@ -113,11 +116,23 @@ function Anlegen({ nr, onFertig }: { nr: number; onFertig: () => void }) {
     }
   }
 
-  async function foto(file: File) {
+  // Foto gewählt: Braucht die KI-Abfrage eine PIN, wartet das Foto auf die Freigabe.
+  async function fotoGewaehlt(file: File) {
+    setWeg("foto"); setHinweis(null); setPinFehler(null);
+    if (datei.current) datei.current.value = "";
+    if (await brauchtPin()) setWartet(file);
+    else await foto(file);
+  }
+
+  async function foto(file: File, pin?: string) {
     setWeg("foto");
     setLaedt("Fahrzeugschein wird gelesen – nur die Felder 2.1 und 2.2 …");
-    const a = await leseFahrzeugschein(file);
-    if (datei.current) datei.current.value = "";
+    const a = await leseFahrzeugschein(file, pin);
+    if (a.pinNoetig) {
+      setLaedt(null); setWartet(file); setPinFehler(a.fehler ?? "Die PIN stimmt nicht.");
+      return;
+    }
+    setWartet(null); setPinFehler(null);
     if (!a.ok || !a.hsn || !a.tsn) {
       setLaedt(null);
       setHinweis(a.fehler ?? "Die Nummern waren nicht lesbar. Tipp sie bitte ab.");
@@ -166,7 +181,15 @@ function Anlegen({ nr, onFertig }: { nr: number; onFertig: () => void }) {
           <span>Von Hand eingeben<span className="block font-sans text-[14px] font-normal text-muted">Für Importe, Oldtimer und Umbauten.</span></span>
         </button>
       </div>
-      <input ref={datei} type="file" accept="image/*" capture="environment" className="sr-only" aria-label="Foto vom Fahrzeugschein" onChange={(e) => e.target.files?.[0] && foto(e.target.files[0])} />
+      <input ref={datei} type="file" accept="image/*" capture="environment" className="sr-only" aria-label="Foto vom Fahrzeugschein" onChange={(e) => e.target.files?.[0] && fotoGewaehlt(e.target.files[0])} />
+
+      {wartet && !laedt && (
+        <PinFreigabe
+          was="Dein Fahrzeugschein-Foto" fehler={pinFehler}
+          onFreigabe={(pin) => foto(wartet, pin)}
+          onAbbruch={() => { setWartet(null); setPinFehler(null); setWeg("nummer"); }}
+        />
+      )}
 
       {(weg === "nummer" || (weg === "foto" && (hsn || laedt))) && (
         <form className="mt-5 flex flex-wrap items-end gap-3" onSubmit={(e) => { e.preventDefault(); setVomFoto(false); void suche(hsn, tsn); }}>

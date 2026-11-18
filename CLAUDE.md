@@ -40,6 +40,9 @@ Beispieldaten, gebaut als Fundament für den echten Auftritt. Überblick und And
   eigenen Routen in `app/api/` und werden ohne Webhook simuliert. Fahrzeugschein-Fotos nie speichern.
 - Alles, was vom Tagesdatum abhängt, wird im Browser berechnet (`useHeute()`) oder per `revalidate` erneuert.
 - Keine Geheimnisse im Client: Webhook-URLs und Tokens nur in Server-Routen und Umgebungsvariablen.
+- KI-Abfragen (Bildanalyse) brauchen pro Anfrage die PIN aus `KI_PIN`; Prüfung nur serverseitig in
+  `lib/server/freigabe.ts`. Die PIN nie in Code, Tests, README oder Commits schreiben und nie im Browser speichern.
+  Neue KI-Routen müssen `pruefeFreigabe()` aufrufen, bevor sie einen Webhook ansprechen.
 
 ## Sprache und Ton
 
